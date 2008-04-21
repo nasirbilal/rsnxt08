@@ -27,7 +27,7 @@
 ///////////////////////////
 
 // in header file
-
+twoDMatrix ExciteMatrix[3]; //the 3d matrix holding the excitatory weights
 ///////////////////////////
 //                       //
 // Excitory Matrix stuff //
@@ -35,18 +35,18 @@
 ///////////////////////////
 
 // Normalised Gaussian for excitory matrix
-double getNormalisedGaussian(int n, double variance)
+double getNormalisedGaussian(double variance)
 {
-	double gaussian[n];
-	double x = -0.5 * (n-1);
+	double gaussian[3];
+	double x = -0.5 * (3-1);
 	double sum = 0;
-	for(int i = 0; i < n; i++)
+	for(int i = 0; i < 3; i++)
 		{
 			gaussian[i] = exp(-(x * x) / variance);
 			x++;
 			sum += gaussian[i];
 		}
-	for(int i = 0; i < n; i++)
+	for(int i = 0; i < 3; i++)
 		{
 		gaussian[i] = gaussian[i]/sum;
 
@@ -56,47 +56,82 @@ double getNormalisedGaussian(int n, double variance)
 
 
 //ripped straight out of Skynet for the excitory matrix
-void vectorMultiply(double *array1, double *array2, double *answer, int N)
-{
-	int i, j;
-	double sum = 0.0, factor;
+double vectorMultiply(double array1, double array2, int N)
+{ //N is the length of the array - in this case it will be 3, thus the result matrix has the dimensions already entered
+	double sum = 0.0;
+	double result[3][3];
 
-	for (i = 0; i < N; i++) {
-		for (j = 0; j < N; j++) {
-			answer = array1 * array2;
-			sum += answer;
-			answer++;
-			array2++;
-		}
-		array1++;
-		array2-=N;
-	}
-
-	factor = 1.0 / sum;
-
-	//Now normalize it, first reset the positions within the arrays we are pointing to
-	answer -= N * N;
-
-	for (i = 0; i < N; i++) {
-		for (j = 0; j < N; j++) {
-			answer = answer * factor;
-			answer++;
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < N; j++) {
+			result[i][j] = array1[i] * array2[j];
+			sum += result[i][j];
 		}
 	}
+
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < N; j++) {
+			result[i][j] /= sum;
+		}
+	}
+	return result;
 }
 
-void getExcitationWeight(int relativeX, int relativeY, int relativeTheta)
+
+//this will set up the excitory matrix
+void setupWeightMatrix()
 {
-	excitation_Weights.i = relativeX + influenceXY;
-	excitation_Weights.j = relativeY + influenceXY;
-	excitation_Weights.k = relativeTheta + influenceTheta;
+	/*
+	Idea for doing 3d matrices
+	typedef struct {
+		double matrix[3][3];
+	} twoDMatrix
+
+	then:-
+	twoDMatrix threeDMatrix[3];
+
+	therefore threeDMatrix[x].matrix[y][z]
+	*/
+
+	double sum = 0.0;
+	double factor = 0.0;
+	double a, b, c;
+
+	a = getNormalisedGaussian(weightVarianceXY);
+	c = getNormalisedGaussian(weightVarianceTheta);
+	b = vectorMultiply(a,a,3);
+
+	for(int x = 0; x < xyRange; x++)
+	{
+		for(int y = 0; y < xyRange; y++)
+		{
+			for(int z = 0; z < thetaRange; z++)
+			{
+				ExciteMatrix[x].matrix2D[y][z] = b[x][y] * c[z];
+				sum += ExciteMatrix[x].matrix2D[y][z];
+			}
+		}
+
+	}
+
+	for(int x = 0; x < xyRange; x++)
+	{
+		for(int y = 0; y < xyRange; y++)
+		{
+			for(int z = 0; z < thetaRange; z++)
+			{
+				ExciteMatrix[x].matrix2D[y][z] = (ExciteMatrix[x].matrix2D[y][z])/sum;
+				ExciteMatrix[x].matrix2D[y][z] = (ExciteMatrix[x].matrix2D[y][z])* weightScaleFactor;
+			}
+		}
+
+	}
+
 }
 
 void doExcitation(double stepsize)
 {
 	writeMatrix ExciteWriteMatrix = PoseCellStructure.WriteMatrix;
 	### continue
-
 
 }
 
