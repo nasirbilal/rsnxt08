@@ -33,6 +33,9 @@ double weightVarianceTheta = 0.5; // Theta variance in metres for the Gaussian w
 int weightScaleFactor = 14; // strength of influence between pose cells
 double globalInhibition = 0.014; // the rate of linear decay
 int poseEstimationRadius = 6; // maximum distance of cells to the maximally activated cell included in averaging to estimate the most likely position
+short int xyRange = 3; // total range in cells of the xy range
+short int thetaRange = 3; // range of the theta dimension
+
 
 ///////////////////////////
 //                       //
@@ -63,6 +66,10 @@ typedef struct {
 } PoseCellPosition;
 
 typedef struct {
+	double matrix2D[3][3];
+} twoDMatrix;
+
+typedef struct {
 	activationMatrix ActivationMatrix;
 	writeMatrix WriteMatrix;
 	double cellLengthX;
@@ -90,3 +97,4 @@ void vectorMultiply(double *array1, double *array2, double *answer, int N);
 void getExcitationWeight(int relativeX, int relativeY, int relativeTheta);
 void doExcitation(double stepsize);
 void getStartCell();
+void setupWeightMatrix();
