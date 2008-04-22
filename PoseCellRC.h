@@ -36,7 +36,6 @@ int poseEstimationRadius = 6; // maximum distance of cells to the maximally acti
 short int xyRange = 3; // total range in cells of the xy range
 short int thetaRange = 3; // range of the theta dimension
 
-
 ///////////////////////////
 //                       //
 // Structure Definitions //
@@ -47,15 +46,11 @@ short int thetaRange = 3; // range of the theta dimension
 //Taken from RAMP
 
 typedef struct {
-	double i[50]; //sizeX
-	double j[50]; //sizeY
-  double k[36]; //sizeTheta
+	double array2D[50][50]; //using an array of structures to create [][][]
 } writeMatrix;
 
 typedef struct {
-	double i[50]; //sizeX
-	double j[50]; //sizeY
-  double k[36]; //sizeTheta
+	double array2D[50][50]; //using an array of structures to create [][][]
 } activationMatrix;
 
 // PoseCellPosition
@@ -63,6 +58,8 @@ typedef struct {
 	double x;
 	double y;
 	double theta;
+	double poseActivity;
+	short int ACTIVE = 0;
 } PoseCellPosition;
 
 typedef struct {
@@ -70,11 +67,11 @@ typedef struct {
 } twoDMatrix;
 
 typedef struct {
-	activationMatrix ActivationMatrix;
-	writeMatrix WriteMatrix;
-	double cellLengthX;
-	double cellLengthY;
-	double cellLengthTheta;
+	activationMatrix Activation_Matrix[50];
+	writeMatrix Write_Matrix[50];
+	double cellLengthX = lengthX/sizeX;
+	double cellLengthY = lengthY/sizeY;
+	double cellLengthTheta = 360/sizeTheta;
 	PoseCellPosition maxActivatedCell;
 	int numCells;
 	int maxNumActive;
@@ -98,3 +95,5 @@ void getExcitationWeight(int relativeX, int relativeY, int relativeTheta);
 void doExcitation(double stepsize);
 void getStartCell();
 void setupWeightMatrix();
+double doInhibition(double stepSize);
+void doNormalisation(double activationSum);

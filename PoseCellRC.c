@@ -11,6 +11,24 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Things to do:- work out how poseCellPosition and poseCellStructure are going to work together. Essentially want a poseCellStructure containing
+//								all the posecellPosition's but need to consider the activity matrix and write matrix.  Only want to implement these once.  Possibly
+//					 			in the poseCellStructure have like poseCellPosition holdArray[some number].  Need to think bout it.
+//							- use the setActivity function in the rest of the code
+//							- continue with posestructure setup
+//
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
 #pragma platform(NXT)
 ///////////////////////////
 //                       //
@@ -130,11 +148,69 @@ void setupWeightMatrix()
 
 void doExcitation(double stepsize)
 {
-	writeMatrix ExciteWriteMatrix = PoseCellStructure.WriteMatrix;
-	### continue
+	writeMatrix ExciteWriteMatrix = poseEnvironment.Write_Matrix;
+	for(int x = 0; x < poseEnvironment.maxNumActive; x++)
+	{
+### look at carefully
+
+	}
 
 }
 
+
+///%%%%%%%%%**********As with doExcitation need to look at how the arrays are workin and how they work together
+/// note:- need to somehow keep track of active cells rather than searchin through the environment each time but due to array stuff could be easiest way
+double doInhibition(double stepSize)
+{
+	double inhibition = globalInhibition * stepSize;
+
+	double activationSum = 0;
+
+	for(int x = 0; x < 100; x++) //from a 100 array of posePositions
+	{
+		PoseCellPosition position = poseEnvironment[x];
+		if(position.ACTIVE)
+		{
+			double activation = position.poseActivity - inhibition;
+			if(activation <= 0)
+			{
+				activation = 0;
+				position.ACTIVE = 0;
+			}
+			position.poseActivity = activation;
+			activationSum += activation;
+		}
+	}
+	return activationSum;
+}
+
+void doNormalisation(double activationSum)
+{
+	for(int x = 0; x < 100; x ++)
+	{
+		PoseCellPosition position = poseEnvironment[x];
+		if(position.ACTIVE)
+		{
+			position.poseActivity = position.poseActivity / activationSum;
+		}
+	}
+}
+
+//using setActivation as will update the activity matrix as well, which is how i shall keep track of active cells
+void setActivition (PoseCellPosition cell, double activation)
+{
+	double previousActivation = cell.poseActivity;
+	if(previousActivation == activation)
+	{
+		return;
+	}
+	PoseCellStructure.Activation_Matrix[cell.x].array2D[cell.y][cell.theta] = activation;
+	if(PoseCellStructure.maxActivatedCell == null || activation > PoseCellStructure.maxActivatedCell.poseActivity)
+	{
+		PoseCellStructure.maxActivatedCell = cell;
+	}
+
+}
 ///////////////////////////
 //                       //
 // Pose Cell start       //
@@ -160,7 +236,8 @@ void getStartCell()
 
 task main()
 {
-  PoseCellPosition startPosition; //starting pose cell due to robotC not allowing Pose position struct to be returned
+  PoseCellStructure poseEnvironment[100];
+	PoseCellPosition startPosition; //starting pose cell due to robotC not allowing Pose position struct to be returned
   excitationWeights excitation_Weights;
 
 }
