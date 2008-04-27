@@ -28,8 +28,8 @@
 //
 //	Changes made from orignal code to make this work.
 //				- cell sizes are now smaller, going to try a 10x10x36 instead
-//				- only going to use int instead of doubles
-//
+//				- only going to use int instead of doubles, or even chars.
+//				- establish excitation matrix by hand (used matlab)
 //
 //
 //
@@ -53,116 +53,51 @@
 ///////////////////////////
 
 // in header file
-matrix3DSmall excitation_Weights;
-PoseCellStructure poseEnvironment;
 
 ///////////////////////////
 //                       //
-// Excitory Matrix stuff //
+// Excitatory Matrix stuff //
 //                       //
 ///////////////////////////
 
-// Normalised Gaussian for excitory matrix
-double getNormalisedGaussian(double variance)
+//established it like this to try and take some computational strain off NXT
+void excitationMatrixSetup()
 {
-	double gaussian[3];
-	int x = -1;
-	double sum = 0;
-	for(int i = 0; i < 3; i++)
-		{
-			gaussian[i] = exp(-(x * x) / variance);
-			x++;
-			sum += gaussian[i];
-		}
-	for(int i = 0; i < 3; i++)
-		{
-		gaussian[i] = gaussian[i]/sum;
+	excitation_Weights[1].array2D[1][1] = 0.0846;
+	excitation_Weights[1].array2D[1][2] = 0.2953;
+	excitation_Weights[1].array2D[1][3] = 0.0846;
+	excitation_Weights[1].array2D[2][1] = 0.2953;
+	excitation_Weights[1].array2D[2][2] = 1.0305;
+	excitation_Weights[1].array2D[2][3] = 0.2953;
+	excitation_Weights[1].array2D[3][1] = 0.0846;
+	excitation_Weights[1].array2D[3][2] = 0.2953;
+	excitation_Weights[1].array2D[3][3] = 0.0846;
 
-		}
-		return gaussian;
+	excitation_Weights[2].array2D[1][1] = 0.2953;
+	excitation_Weights[2].array2D[1][2] = 1.0305;
+	excitation_Weights[2].array2D[1][3] = 0.2953;
+	excitation_Weights[2].array2D[2][1] = 1.0305;
+	excitation_Weights[2].array2D[2][2] = 3.5969;
+	excitation_Weights[2].array2D[2][3] = 1.0305;
+	excitation_Weights[2].array2D[3][1] = 0.2953;
+	excitation_Weights[2].array2D[3][2] = 1.0305;
+	excitation_Weights[2].array2D[3][3] = 0.2953;
+
+	excitation_Weights[3].array2D[1][1] = 0.0846;
+	excitation_Weights[3].array2D[1][2] = 0.2953;
+	excitation_Weights[3].array2D[1][3] = 0.0846;
+	excitation_Weights[3].array2D[2][1] = 0.2953;
+	excitation_Weights[3].array2D[2][2] = 1.0305;
+	excitation_Weights[3].array2D[2][3] = 0.2953;
+	excitation_Weights[3].array2D[3][1] = 0.0846;
+	excitation_Weights[3].array2D[3][2] = 0.2953;
+	excitation_Weights[3].array2D[3][3] = 0.0846;
 }
 
-
-//ripped straight out of Skynet for the excitory matrix
-double vectorMultiply(double array1, double array2, int N)
-{ //N is the length of the array - in this case it will be 3, thus the result matrix has the dimensions already entered
-	double sum = 0.0;
-	double result[3][3];
-
-	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < N; j++) {
-			result[i][j] = array1[i] * array2[j];
-			sum += result[i][j];
-		}
-	}
-
-	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < N; j++) {
-			result[i][j] /= sum;
-		}
-	}
-	return result;
-}
-
-
-//this will set up the excitory matrix
-void setupWeightMatrix()
-{
-	/*
-	Idea for doing 3d matrices
-	typedef struct {
-		double matrix[3][3];
-	} twoDMatrix
-
-	then:-
-	twoDMatrix threeDMatrix[3];
-
-	therefore threeDMatrix[x].matrix[y][z]
-	*/
-
-	double sum = 0.0;
-	double factor = 0.0;
-	double a, b, c;
-
-	a = getNormalisedGaussian(weightVarianceXY);
-	c = getNormalisedGaussian(weightVarianceTheta);
-	b = vectorMultiply(a,a,3);
-
-	for(int x = 0; x < xyRange; x++)
-	{
-		for(int y = 0; y < xyRange; y++)
-		{
-			for(int z = 0; z < thetaRange; z++)
-			{
-				excitation_Weights[x].array2D[y][z] = b[x][y] * c[z];
-				sum += excitation_Weights[x].array2D[y][z];
-			}
-		}
-
-	}
-
-	for(int x = 0; x < xyRange; x++)
-	{
-		for(int y = 0; y < xyRange; y++)
-		{
-			for(int z = 0; z < thetaRange; z++)
-			{
-				excitation_Weights[x].array2D[y][z] = ((excitation_Weights[x].array2D[y][z])/sum) * weightScaleFactor;
-			}
-		}
-
-	}
-
-}
 
 void doExcitation(double stepsize)
 {
-	writeMatrix ExciteWriteMatrix = poseEnvironment.Write_Matrix;
-	for(int x = 0; x < poseEnvironment.maxNumActive; x++)
-	{
-### look at carefully
 
-	}
 
 }
 
@@ -175,19 +110,24 @@ double doInhibition(double stepSize)
 
 	double activationSum = 0;
 
-	for(int x = 0; x < 100; x++) //from a 100 array of posePositions
+	for(char x = 0; x < 10; x++) //from a 100 array of posePositions
 	{
-		PoseCellPosition position = poseEnvironment[x];
-		if(position.ACTIVE)
+		for(char y = 0; y < 10; y++)
 		{
-			double activation = position.poseActivity - inhibition;
-			if(activation <= 0)
+			for(char z = 0; z < 6; z++)
 			{
-				activation = 0;
-				position.ACTIVE = 0;
+				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
+				if(position.ACTIVE) //only touch cells that are active - not the best way of doing this but will do for testing
+				{
+					double activation = position.poseActivity - inhibition;
+					if(activation <= 0)
+					{
+					activation = 0;
+					}
+					setActivition(position, activation);
+					activationSum += activation;
+				}
 			}
-			position.poseActivity = activation;
-			activationSum += activation;
 		}
 	}
 	return activationSum;
@@ -206,20 +146,28 @@ void doNormalisation(double activationSum)
 }
 
 //using setActivation as will update the activity matrix as well, which is how i shall keep track of active cells
-void setActivition (PoseCellPosition cell, double activation)
+void setActivition(PoseCellPosition cell, double activation)
 {
 	double previousActivation = cell.poseActivity;
 	if(previousActivation == activation)
 	{
 		return;
 	}
-	poseEnvironment.positionReferences[cell.x].array2D[cell.y][cell.theta] = activation;
-	if(PoseCellStructure.maxActivatedCell == null || activation > PoseCellStructure.maxActivatedCell.poseActivity)
+	if(activation == 0)
 	{
-		PoseCellStructure.maxActivatedCell = cell;
+		cell.ACTIVE = 0;
 	}
-
+	cell.poseActivity = activation;
+	poseEnvironment.positionReferences[cell.x].array2D[cell.y][cell.theta] = cell;
+	if(activation > PoseCellStructure.maxActivatedCell.poseActivity)
+	{
+		poseEnvironment.maxActivatedCell = cell;
+	}
 }
+
+
+
+
 ///////////////////////////
 //                       //
 // Pose Cell start       //
@@ -231,12 +179,14 @@ void setActivition (PoseCellPosition cell, double activation)
 void initalisePose()
 {
 	PoseCellPosition startPosition;
-	startPosition.x = 25;
-	startPosition.y = 25;
+	startPosition.x = 5;
+	startPosition.y = 5;
 	startPosition.theta = 0;
 	startPosition.poseActivity = startActivation;
 	startPosition.ACTIVE = 1;
-	poseEnvironment.positionReferences[25].array2D[25][0] = startPosition;
+	poseEnvironment.positionReferences[5].array2D[5][0] = startPosition;
+	poseEnvironment.maxActivatedCell = startPosition;
+	excitationMatrixSetup();
 }
 
 
@@ -249,6 +199,7 @@ void initalisePose()
 
 task main()
 {
+	initalisePose();
 
 	 //starting pose cell due to robotC not allowing Pose position struct to be returned
  }
