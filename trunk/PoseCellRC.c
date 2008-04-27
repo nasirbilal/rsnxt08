@@ -13,19 +13,6 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	Things to do:- work out how poseCellPosition and poseCellStructure are going to work together. Essentially want a poseCellStructure containing
-//								all the posecellPosition's but need to consider the activity matrix and write matrix.  Only want to implement these once.  Possibly
-//					 			in the poseCellStructure have like poseCellPosition holdArray[some number].  Need to think bout it.
-//							- use the setActivity function in the rest of the code
-//							- continue with posestructure setup
-//
-//
-//
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
 //	Changes made from orignal code to make this work.
 //				- cell sizes are now smaller, going to try a 10x10x36 instead
 //				- only going to use int instead of doubles, or even chars.
@@ -54,11 +41,11 @@
 
 // in header file
 
-///////////////////////////
-//                       //
+/////////////////////////////
+//                         //
 // Excitatory Matrix stuff //
-//                       //
-///////////////////////////
+//                         //
+/////////////////////////////
 
 //established it like this to try and take some computational strain off NXT
 void excitationMatrixSetup()
@@ -94,23 +81,54 @@ void excitationMatrixSetup()
 	excitation_Weights[3].array2D[3][3] = 0.0846;
 }
 
-
-void doExcitation(double stepsize)
+//wrapping stuff
+char getWrappedX(char indexX)
 {
-
-
+	if(indexX < 0)
+	{
+		return (indexX + sizeX);
+	}
+	else if(indexX >= sizeX)
+	{
+		return (indexX - sizeX);
+	}
+	return indexX;
 }
 
+char getWrappedY(char indexY)
+{
+	if(indexY < 0)
+	{
+		return (indexY + sizeY);
+	}
+	else if(indexY >= sizeY)
+	{
+		return (indexY - sizeY);
+	}
+	return indexY;
+}
 
-///%%%%%%%%%**********As with doExcitation need to look at how the arrays are workin and how they work together
-/// note:- need to somehow keep track of active cells rather than searchin through the environment each time but due to array stuff could be easiest way
+char getWrappedTheta(char indexTheta)
+{
+	if(indexTheta < 0)
+	{
+		return (indexTheta + sizeTheta);
+	}
+	else if(indexTheta >= sizeTheta)
+	{
+		return (indexTheta - sizeTheta);
+	}
+	return indexTheta;
+}
+
+//inhibition stuff
 double doInhibition(double stepSize)
 {
 	double inhibition = globalInhibition * stepSize;
 
 	double activationSum = 0;
 
-	for(char x = 0; x < 10; x++) //from a 100 array of posePositions
+	for(char x = 0; x < 10; x++)
 	{
 		for(char y = 0; y < 10; y++)
 		{
@@ -133,19 +151,44 @@ double doInhibition(double stepSize)
 	return activationSum;
 }
 
+//Normalisation of activity
 void doNormalisation(double activationSum)
 {
-	for(int x = 0; x < 100; x ++)
+	for(char x = 0; x < 10; x++)
 	{
-		PoseCellPosition position = poseEnvironment[x];
-		if(position.ACTIVE)
+		for(char y = 0; y < 10; y++)
 		{
-			position.poseActivity = position.poseActivity / activationSum;
+			for(char z = 0; z < 6; z++)
+			{
+				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
+				if(position.ACTIVE)
+				{
+					position.poseActivity = position.poseActivity / activationSum;
+				}
+			}
 		}
 	}
 }
 
-//using setActivation as will update the activity matrix as well, which is how i shall keep track of active cells
+//Excitation
+void doExcitation(double stepsize)
+{
+	for(char x = 0; x < 10; x++)
+	{
+		for(char y = 0; y < 10; y++)
+		{
+			for(char z = 0; z < 6; z++)
+			{
+				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
+				double thisActivation = position.poseActivity;
+
+			}
+		}
+	}
+}
+
+
+//using setActivation
 void setActivition(PoseCellPosition cell, double activation)
 {
 	double previousActivation = cell.poseActivity;
@@ -164,9 +207,6 @@ void setActivition(PoseCellPosition cell, double activation)
 		poseEnvironment.maxActivatedCell = cell;
 	}
 }
-
-
-
 
 ///////////////////////////
 //                       //

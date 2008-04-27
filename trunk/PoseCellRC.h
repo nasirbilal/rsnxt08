@@ -22,7 +22,7 @@
 
 char sizeX = 10; // number of cells representing x dimension
 char sizeY = 10; // number of cells representing y dimension
-char sizeTheta = 36; // number of cells representing theta dimension
+char sizeTheta = 6; // number of cells representing theta dimension
 double startActivation = 0.5; // the starting activity of the first activity packet
 char influenceXY = 1; // the range of influence of pose cells on neighbouring pose cells (x,y)
 char influenceTheta = 1; // the range of influence of pose cells on neighbouring pose cells (Theta)
@@ -79,5 +79,9 @@ void setupWeightMatrix();
 double doInhibition(double stepSize);
 void doNormalisation(double activationSum);
 void setActivition(PoseCellPosition cell, double activation);
+void excitationMatrixSetup();
+char getWrappedX(char indexX);
+char getWrappedY(char indexY);
+char getWrappedTheta(char indexTheta);
 matrix3DSmall excitation_Weights;
 PoseCellStructure poseEnvironment;
