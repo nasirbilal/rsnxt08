@@ -20,21 +20,19 @@
 //Currently taken straight from ramp code but will probably need some tweaking
 //
 
-int sizeX = 10; // number of cells representing x dimension
-int sizeY = 10; // number of cells representing y dimension
-int sizeTheta = 36; // number of cells representing theta dimension
-int lengthX = 12.5; // the length of x (in metres) represented by the pose
-int lengthY= 12.5; // the length of Y (in metres) represented by the pose
-int startActivation = 0.5; // the starting activity of the first activity packet
-int influenceXY = 1; // the range of influence of pose cells on neighbouring pose cells (x,y)
-int influenceTheta = 1; // the range of influence of pose cells on neighbouring pose cells (Theta)
-int weightVarianceXY = 8; // XY variance in metres for the Gaussian weight matrix
-int weightVarianceTheta = 8; // Theta variance in metres for the Gaussian weight matrix
-int weightScaleFactor = 14; // strength of influence between pose cells
+char sizeX = 10; // number of cells representing x dimension
+char sizeY = 10; // number of cells representing y dimension
+char sizeTheta = 36; // number of cells representing theta dimension
+double startActivation = 0.5; // the starting activity of the first activity packet
+char influenceXY = 1; // the range of influence of pose cells on neighbouring pose cells (x,y)
+char influenceTheta = 1; // the range of influence of pose cells on neighbouring pose cells (Theta)
+double weightVarianceXY = 0.8; // XY variance in metres for the Gaussian weight matrix
+double weightVarianceTheta = 0.8; // Theta variance in metres for the Gaussian weight matrix
+char weightScaleFactor = 14; // strength of influence between pose cells
 double globalInhibition = 0.014; // the rate of linear decay
-int poseEstimationRadius = 6; // maximum distance of cells to the maximally activated cell included in averaging to estimate the most likely position
-short xyRange = 3; // total range in cells of the xy range
-short thetaRange = 3; // range of the theta dimension
+char poseEstimationRadius = 6; // maximum distance of cells to the maximally activated cell included in averaging to estimate the most likely position
+char xyRange = 3; // total range in cells of the xy range
+char thetaRange = 3; // range of the theta dimension
 
 ///////////////////////////
 //                       //
@@ -47,15 +45,15 @@ short thetaRange = 3; // range of the theta dimension
 
 // PoseCellPosition
 typedef struct {
-	int x;
-	int y;
-	int theta;
-	int poseActivity;
-	short ACTIVE = 0;
+	char x;
+	char y;
+	char theta;
+	double poseActivity;
+	char ACTIVE = 0;
 } PoseCellPosition;
 
 typedef struct {
-	PoseCellPosition array2D[10][36]; //using an array of structures to create [][][]
+	PoseCellPosition array2D[10][6]; //using an array of structures to create [][][]
 } matrix3DBig;
 
 typedef struct {
@@ -66,9 +64,10 @@ typedef struct {
 typedef struct {
 	matrix3DBig positionReferences[10];
 	PoseCellPosition maxActivatedCell;
-	int numCells = 1;
-	int maxNumActive = 1;
+	short numCells = 1;
+	short maxNumActive = 1;
 } PoseCellStructure;
+
 
 
 double getNormalisedGaussian(int n, double variance);
@@ -79,3 +78,6 @@ void getStartCell();
 void setupWeightMatrix();
 double doInhibition(double stepSize);
 void doNormalisation(double activationSum);
+void setActivition(PoseCellPosition cell, double activation);
+matrix3DSmall excitation_Weights;
+PoseCellStructure poseEnvironment;
