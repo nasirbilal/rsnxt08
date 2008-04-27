@@ -48,13 +48,16 @@ typedef struct {
 	char x;
 	char y;
 	char theta;
-	double poseActivity;
 	char ACTIVE = 0;
 } PoseCellPosition;
 
 typedef struct {
 	PoseCellPosition array2D[10][6]; //using an array of structures to create [][][]
-} matrix3DBig;
+} matrix3DBigCell;
+
+typedef struct {
+	double array2D[10][6]; //using an array of structures to create [][][]
+} matrix3DBigAct;
 
 typedef struct {
 	double array2D[3][3];
@@ -62,7 +65,8 @@ typedef struct {
 
 
 typedef struct {
-	matrix3DBig positionReferences[10];
+	matrix3DBigCell positionReferences[10];
+	matrix3DBigAct poseActivity[10];
 	PoseCellPosition maxActivatedCell;
 	short numCells = 1;
 	short maxNumActive = 1;
