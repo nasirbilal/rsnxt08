@@ -24,11 +24,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
 #pragma platform(NXT)
 ///////////////////////////
 //                       //
@@ -45,7 +40,9 @@
 ///////////////////////////
 
 // in header file
-twoDMatrix ExciteMatrix[3]; //the 3d matrix holding the excitatory weights
+matrix3DSmall excitation_Weights;
+PoseCellStructure poseEnvironment;
+
 ///////////////////////////
 //                       //
 // Excitory Matrix stuff //
@@ -204,7 +201,7 @@ void setActivition (PoseCellPosition cell, double activation)
 	{
 		return;
 	}
-	PoseCellStructure.Activation_Matrix[cell.x].array2D[cell.y][cell.theta] = activation;
+	poseEnvironment.positionReferences[cell.x].array2D[cell.y][cell.theta] = activation;
 	if(PoseCellStructure.maxActivatedCell == null || activation > PoseCellStructure.maxActivatedCell.poseActivity)
 	{
 		PoseCellStructure.maxActivatedCell = cell;
@@ -219,11 +216,15 @@ void setActivition (PoseCellPosition cell, double activation)
 
 
 //Determine Startcell - currently using a global starting Pose
-void getStartCell()
+void initalisePose()
 {
-	startPosition.x = lengthX;
-	startPosition.y = lengthY;
-	startPosition.theta = sizeTheta;
+	PoseCellPosition startPosition;
+	startPosition.x = 25;
+	startPosition.y = 25;
+	startPosition.theta = 0;
+	startPosition.poseActivity = startActivation;
+	startPosition.ACTIVE = 1;
+	poseEnvironment.positionReferences[25].array2D[25][0] = startPosition;
 }
 
 
@@ -236,8 +237,6 @@ void getStartCell()
 
 task main()
 {
-  PoseCellStructure poseEnvironment[100];
-	PoseCellPosition startPosition; //starting pose cell due to robotC not allowing Pose position struct to be returned
-  excitationWeights excitation_Weights;
 
-}
+	 //starting pose cell due to robotC not allowing Pose position struct to be returned
+ }
