@@ -24,6 +24,19 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Changes made from orignal code to make this work.
+//				- cell sizes are now smaller, going to try a 10x10x36 instead
+//				- only going to use int instead of doubles
+//
+//
+//
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #pragma platform(NXT)
 ///////////////////////////
 //                       //
@@ -53,7 +66,7 @@ PoseCellStructure poseEnvironment;
 double getNormalisedGaussian(double variance)
 {
 	double gaussian[3];
-	double x = -0.5 * (3-1);
+	int x = -1;
 	double sum = 0;
 	for(int i = 0; i < 3; i++)
 		{
@@ -121,8 +134,8 @@ void setupWeightMatrix()
 		{
 			for(int z = 0; z < thetaRange; z++)
 			{
-				ExciteMatrix[x].matrix2D[y][z] = b[x][y] * c[z];
-				sum += ExciteMatrix[x].matrix2D[y][z];
+				excitation_Weights[x].array2D[y][z] = b[x][y] * c[z];
+				sum += excitation_Weights[x].array2D[y][z];
 			}
 		}
 
@@ -134,8 +147,7 @@ void setupWeightMatrix()
 		{
 			for(int z = 0; z < thetaRange; z++)
 			{
-				ExciteMatrix[x].matrix2D[y][z] = (ExciteMatrix[x].matrix2D[y][z])/sum;
-				ExciteMatrix[x].matrix2D[y][z] = (ExciteMatrix[x].matrix2D[y][z])* weightScaleFactor;
+				excitation_Weights[x].array2D[y][z] = ((excitation_Weights[x].array2D[y][z])/sum) * weightScaleFactor;
 			}
 		}
 

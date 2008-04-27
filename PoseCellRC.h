@@ -20,21 +20,21 @@
 //Currently taken straight from ramp code but will probably need some tweaking
 //
 
-int sizeX = 50; // number of cells representing x dimension
-int sizeY = 50; // number of cells representing y dimension
+int sizeX = 10; // number of cells representing x dimension
+int sizeY = 10; // number of cells representing y dimension
 int sizeTheta = 36; // number of cells representing theta dimension
-double lengthX = 12.5; // the length of x (in metres) represented by the pose
-double lengthY= 12.5; // the length of Y (in metres) represented by the pose
-double startActivation = 0.5; // the starting activity of the first activity packet
+int lengthX = 12.5; // the length of x (in metres) represented by the pose
+int lengthY= 12.5; // the length of Y (in metres) represented by the pose
+int startActivation = 0.5; // the starting activity of the first activity packet
 int influenceXY = 1; // the range of influence of pose cells on neighbouring pose cells (x,y)
 int influenceTheta = 1; // the range of influence of pose cells on neighbouring pose cells (Theta)
-double weightVarianceXY = 0.8; // XY variance in metres for the Gaussian weight matrix
-double weightVarianceTheta = 0.5; // Theta variance in metres for the Gaussian weight matrix
+int weightVarianceXY = 8; // XY variance in metres for the Gaussian weight matrix
+int weightVarianceTheta = 8; // Theta variance in metres for the Gaussian weight matrix
 int weightScaleFactor = 14; // strength of influence between pose cells
 double globalInhibition = 0.014; // the rate of linear decay
 int poseEstimationRadius = 6; // maximum distance of cells to the maximally activated cell included in averaging to estimate the most likely position
-short int xyRange = 3; // total range in cells of the xy range
-short int thetaRange = 3; // range of the theta dimension
+short xyRange = 3; // total range in cells of the xy range
+short thetaRange = 3; // range of the theta dimension
 
 ///////////////////////////
 //                       //
@@ -42,51 +42,33 @@ short int thetaRange = 3; // range of the theta dimension
 //                       //
 ///////////////////////////
 
-//Pose Cell structure
-//Taken from RAMP
+//Pose Cell structure//
 
-typedef struct {
-	double array2D[50][50]; //using an array of structures to create [][][]
-} writeMatrix;
-
-typedef struct {
-	double array2D[50][50]; //using an array of structures to create [][][]
-} activationMatrix;
 
 // PoseCellPosition
 typedef struct {
-	double x;
-	double y;
-	double theta;
-	double poseActivity;
-	short int ACTIVE = 0;
+	int x;
+	int y;
+	int theta;
+	int poseActivity;
+	short ACTIVE = 0;
 } PoseCellPosition;
 
 typedef struct {
-	double matrix2D[3][3];
-} twoDMatrix;
+	PoseCellPosition array2D[10][36]; //using an array of structures to create [][][]
+} matrix3DBig;
 
 typedef struct {
-	activationMatrix Activation_Matrix[50];
-	writeMatrix Write_Matrix[50];
-	double cellLengthX = lengthX/sizeX;
-	double cellLengthY = lengthY/sizeY;
-	double cellLengthTheta = 360/sizeTheta;
+	double array2D[3][3];
+} matrix3DSmall;
+
+
+typedef struct {
+	matrix3DBig positionReferences[10];
 	PoseCellPosition maxActivatedCell;
-	int numCells;
-	int maxNumActive;
-	double maxActivity;
-	int peakIndex;
+	int numCells = 1;
+	int maxNumActive = 1;
 } PoseCellStructure;
-
-
-
-// Excitation weight array - RobotC will not support more than a 2d array.  The solution? try a structure
-typedef struct {
-	double i[3]; //Note:- these are determined by influenceXY/influenceTheta * 2 + 1
-	double j[3]; //As RobotC doesn't like empty arrays these will be set to three
-	double k[3];
-} excitationWeights;
 
 
 double getNormalisedGaussian(int n, double variance);
