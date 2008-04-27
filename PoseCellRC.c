@@ -1,28 +1,24 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//	Title:- Pose Cells
-//	Author:- Lachlan Smith (RobotC)
-//					 Mark Wakabayashi (Jave version)
-//					 Michael Milford (original algorithim/c code)
-//	Purpose:- The purpose of this program is to implement pose cells and path integration in RobotC for the Lego NXT.  This version will ignore
-//					  local view calibration and attempt to display the active pose cell on the NXT display using built in drawing functions in a purely
-//					  2d form, only showing a x and y plot and ignoring theta.
+//      Title:- Pose Cells
+//      Author:- Lachlan Smith (RobotC)
+//                                       Mark Wakabayashi (Jave version)
+//                                       Michael Milford (original algorithim/c code)
+//      Purpose:- The purpose of this program is to implement pose cells and path integration in RobotC for the Lego NXT.  This version will ignore
+//                                        local view calibration and attempt to display the active pose cell on the NXT display using built in drawing functions in a purely
+//                                        2d form, only showing a x and y plot and ignoring theta. // // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//      Changes made from orignal code to make this work.
+//                              - cell sizes are now smaller, going to try a 10x10x36 instead
+//                              - only going to use int instead of doubles, or even chars.
+//                              - establish excitation matrix by hand (used matlab)
+//
+//
+//
 //
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//	Changes made from orignal code to make this work.
-//				- cell sizes are now smaller, going to try a 10x10x36 instead
-//				- only going to use int instead of doubles, or even chars.
-//				- establish excitation matrix by hand (used matlab)
-//
-//
-//
-//
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma platform(NXT)
 ///////////////////////////
@@ -48,6 +44,7 @@
 /////////////////////////////
 
 //established it like this to try and take some computational strain off NXT
+
 void excitationMatrixSetup()
 {
 	excitation_Weights[1].array2D[1][1] = 0.0846;
@@ -180,12 +177,22 @@ void doExcitation(double stepsize)
 			for(char z = 0; z < 6; z++)
 			{
 				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
-				double thisActivation = position.poseActivity;
-
-			}
-		}
-	}
-}
+				if(position.ACTIVE)
+				{
+					double thisActivation = position.poseActivity;
+					for(char relX = -influenceXY; relX <= influenceXY; relX++)
+					{
+						char neighbourX = getWrappedX(position.x + relX);
+						for(char relY = -influenceXY; relY <= influenceXY; relY++)
+						{
+							char neighbourY = getWrappedY(position.y + relY);
+							for(char relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
+							{
+								char neighbourTheta = getWrappedTheta(position.theta + relTheta);
+								double excitationWeight = excitation_Weights[neighbourX].array2D[neighbourY][neighbourTheta];
+								%%%// this part here requires the writeMatrix, may have to alter the structure of the poseCellPosition to remove the activity and
+								%%%// instead use the write matrix to hold the activites (same size but only hold activity not direction as well
+							}
 
 
 //using setActivation
