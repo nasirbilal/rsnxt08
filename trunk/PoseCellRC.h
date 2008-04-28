@@ -77,16 +77,19 @@ typedef struct {
 } PoseCellStructure;
 
 
-void getExcitationWeight(int relativeX, int relativeY, int relativeTheta);
+
 void doExcitation(double stepsize);
-void setupWeightMatrix();
 double doInhibition(double stepSize);
 void doNormalisation(double activationSum);
-void setActivition(PoseCellPosition cell, double activation);
+//void setActivition(char x, char y, char theta, char ACTIVE, double activation);
 void excitationMatrixSetup();
 char getWrappedX(char indexX);
 char getWrappedY(char indexY);
 char getWrappedTheta(char indexTheta);
+void setupPoseStructure();
+void initalisePose();
+void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char translationX, char translationY);
+void getActivationDistribution(char offsetX, char offsetY, char offsetTheta);
 matrix3DSmall excitation_Weights[3];
 PoseCellStructure poseEnvironment;
 matrix3DSmallX2 distribution[2];
