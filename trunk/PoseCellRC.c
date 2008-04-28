@@ -134,7 +134,7 @@ double doInhibition(double stepSize)
 				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
 				if(position.ACTIVE) //only touch cells that are active - not the best way of doing this but will do for testing
 				{
-					double activation = position.poseActivity - inhibition;
+					double activation = poseEnvironment.poseActivity[x].array2D[y][z] - inhibition;
 					if(activation <= 0)
 					{
 					activation = 0;
@@ -160,7 +160,7 @@ void doNormalisation(double activationSum)
 				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
 				if(position.ACTIVE)
 				{
-					position.poseActivity = position.poseActivity / activationSum;
+					poseEnvironment.poseActivity[x].array2D[y][z] /= activationSum;
 				}
 			}
 		}
@@ -179,7 +179,7 @@ void doExcitation(double stepsize)
 				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
 				if(position.ACTIVE)
 				{
-					double thisActivation = position.poseActivity;
+					double thisActivation = poseEnvironment.poseActivity[x].array2D[y][z];
 					for(char relX = -influenceXY; relX <= influenceXY; relX++)
 					{
 						char neighbourX = getWrappedX(position.x + relX);
@@ -190,15 +190,22 @@ void doExcitation(double stepsize)
 							{
 								char neighbourTheta = getWrappedTheta(position.theta + relTheta);
 								double excitationWeight = excitation_Weights[neighbourX].array2D[neighbourY][neighbourTheta];
-								%%%// this part here requires the writeMatrix, may have to alter the structure of the poseCellPosition to remove the activity and
-								%%%// instead use the write matrix to hold the activites (same size but only hold activity not direction as well
+								poseEnvironment.poseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += thisActivation * excitationWeight;
 							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 
 //using setActivation
 void setActivition(PoseCellPosition cell, double activation)
 {
-	double previousActivation = cell.poseActivity;
+	double previousActivation = poseEnvironment.poseActivity[cell.x].array2D[cell.y][cell.theta];
+	PoseCellPosition maxPose = poseEnvironment.maxActivatedCell;
 	if(previousActivation == activation)
 	{
 		return;
@@ -207,9 +214,13 @@ void setActivition(PoseCellPosition cell, double activation)
 	{
 		cell.ACTIVE = 0;
 	}
-	cell.poseActivity = activation;
+	else
+	{
+		cell.ACTIVE = 1;
+	}
+	poseEnvironment.poseActivity[cell.x].array2D[cell.y][cell.theta] = activation;
 	poseEnvironment.positionReferences[cell.x].array2D[cell.y][cell.theta] = cell;
-	if(activation > PoseCellStructure.maxActivatedCell.poseActivity)
+	if(activation > PoseCellStructure.poseActivity[maxPose.x].array2D[maxPose.y][maxPose.theta])
 	{
 		poseEnvironment.maxActivatedCell = cell;
 	}
@@ -229,9 +240,9 @@ void initalisePose()
 	startPosition.x = 5;
 	startPosition.y = 5;
 	startPosition.theta = 0;
-	startPosition.poseActivity = startActivation;
 	startPosition.ACTIVE = 1;
 	poseEnvironment.positionReferences[5].array2D[5][0] = startPosition;
+	poseEnvironment.poseActivity[5].array2D[5][0] = startActivation;
 	poseEnvironment.maxActivatedCell = startPosition;
 	excitationMatrixSetup();
 }
