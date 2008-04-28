@@ -73,12 +73,8 @@ typedef struct {
 } PoseCellStructure;
 
 
-
-double getNormalisedGaussian(int n, double variance);
-void vectorMultiply(double *array1, double *array2, double *answer, int N);
 void getExcitationWeight(int relativeX, int relativeY, int relativeTheta);
 void doExcitation(double stepsize);
-void getStartCell();
 void setupWeightMatrix();
 double doInhibition(double stepSize);
 void doNormalisation(double activationSum);
