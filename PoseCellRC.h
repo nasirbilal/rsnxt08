@@ -83,5 +83,5 @@ void excitationMatrixSetup();
 char getWrappedX(char indexX);
 char getWrappedY(char indexY);
 char getWrappedTheta(char indexTheta);
-matrix3DSmall excitation_Weights;
+matrix3DSmall excitation_Weights[3];
 PoseCellStructure poseEnvironment;
