@@ -45,38 +45,6 @@
 
 //established it like this to try and take some computational strain off NXT
 
-void excitationMatrixSetup()
-{
-	excitation_Weights[0].array2D[0][0] = 0.0846;
-	excitation_Weights[0].array2D[0][1] = 0.2953;
-	excitation_Weights[0].array2D[0][2] = 0.0846;
-	excitation_Weights[0].array2D[1][0] = 0.2953;
-	excitation_Weights[0].array2D[1][1] = 1.0305;
-	excitation_Weights[0].array2D[1][2] = 0.2953;
-	excitation_Weights[0].array2D[2][0] = 0.0846;
-	excitation_Weights[0].array2D[2][1] = 0.2953;
-	excitation_Weights[0].array2D[2][2] = 0.0846;
-
-	excitation_Weights[1].array2D[0][0] = 0.2953;
-	excitation_Weights[1].array2D[0][1] = 1.0305;
-	excitation_Weights[1].array2D[0][2] = 0.2953;
-	excitation_Weights[1].array2D[1][0] = 1.0305;
-	excitation_Weights[1].array2D[1][1] = 3.5969;
-	excitation_Weights[1].array2D[1][2] = 1.0305;
-	excitation_Weights[1].array2D[2][0] = 0.2953;
-	excitation_Weights[1].array2D[2][1] = 1.0305;
-	excitation_Weights[1].array2D[2][2] = 0.2953;
-
-	excitation_Weights[2].array2D[0][0] = 0.0846;
-	excitation_Weights[2].array2D[0][1] = 0.2953;
-	excitation_Weights[2].array2D[0][2] = 0.0846;
-	excitation_Weights[2].array2D[1][0] = 0.2953;
-	excitation_Weights[2].array2D[1][1] = 1.0305;
-	excitation_Weights[2].array2D[1][2] = 0.2953;
-	excitation_Weights[2].array2D[2][0] = 0.0846;
-	excitation_Weights[2].array2D[2][1] = 0.2953;
-	excitation_Weights[2].array2D[2][2] = 0.0846;
-}
 
 //initalise all pose cell attributes
 void setupPoseStructure()
@@ -90,6 +58,7 @@ void setupPoseStructure()
 				poseEnvironment.positionReferences[i].array2D[j][k].x = i;
 				poseEnvironment.positionReferences[i].array2D[j][k].y = j;
 				poseEnvironment.positionReferences[i].array2D[j][k].theta = k;
+				poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE = 0;
 			}
 		}
 	}
@@ -195,7 +164,7 @@ void setActivition(char x, char y, char theta, char ACTIVE, double activation)
 //inhibition stuff
 double doInhibition(double stepSize)
 {
-	double inhibition = globalInhibition * stepSize;
+	float inhibition = 0.0028;
 
 	double activationSum = 0;
 
@@ -217,7 +186,7 @@ double doInhibition(double stepSize)
 					{
 					activation = 0;
 					}
-					//setActivition(position.x, position.y, position.theta, position.ACTIVE, activation);
+					//setActivition(position1.x, position1.y, position1.theta, position1.ACTIVE, activation);
 					activationSum += activation;
 				}
 			}
@@ -246,7 +215,7 @@ void doNormalisation(double activationSum)
 }
 
 //Excitation
-void doExcitation(double stepsize)
+void doExcitation(float stepsize)
 {
 	for(char i = 0; i < 10; i++)
 	{
@@ -271,7 +240,7 @@ void doExcitation(double stepsize)
 							for(char relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
 							{
 								char neighbourTheta = getWrappedTheta(position2.theta + relTheta);
-								double excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta] * stepsize;
+								float excitationWeight = (float) excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta] * 0.2;
 								poseEnvironment.poseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += thisActivation * excitationWeight;
 							}
 						}
@@ -292,6 +261,7 @@ void doExcitation(double stepsize)
 //Determine Startcell - currently using a global starting Pose
 void initalisePose()
 {
+	excitationMatrixSetup();
 	setupPoseStructure();
 	PoseCellPosition startPosition;
 	startPosition.x = 5;
@@ -307,7 +277,7 @@ void initalisePose()
 	poseEnvironment.maxActivatedCell.y = startPosition.y;
 	poseEnvironment.maxActivatedCell.theta = startPosition.theta;
 	poseEnvironment.maxActivatedCell.ACTIVE = startPosition.ACTIVE;
-	excitationMatrixSetup();
+
 }
 
 ////////////////////////////

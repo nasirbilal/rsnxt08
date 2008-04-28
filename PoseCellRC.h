@@ -23,13 +23,13 @@
 char sizeX = 10; // number of cells representing x dimension
 char sizeY = 10; // number of cells representing y dimension
 char sizeTheta = 6; // number of cells representing theta dimension
-double startActivation = 0.5; // the starting activity of the first activity packet
+float startActivation = 0.5; // the starting activity of the first activity packet
 char influenceXY = 1; // the range of influence of pose cells on neighbouring pose cells (x,y)
 char influenceTheta = 1; // the range of influence of pose cells on neighbouring pose cells (Theta)
-double weightVarianceXY = 0.8; // XY variance in metres for the Gaussian weight matrix
-double weightVarianceTheta = 0.8; // Theta variance in metres for the Gaussian weight matrix
+float weightVarianceXY = 0.8; // XY variance in metres for the Gaussian weight matrix
+float weightVarianceTheta = 0.8; // Theta variance in metres for the Gaussian weight matrix
 char weightScaleFactor = 14; // strength of influence between pose cells
-double globalInhibition = 0.014; // the rate of linear decay
+float globalInhibition = 0.014; // the rate of linear decay
 char poseEstimationRadius = 6; // maximum distance of cells to the maximally activated cell included in averaging to estimate the most likely position
 char xyRange = 3; // total range in cells of the xy range
 char thetaRange = 3; // range of the theta dimension
@@ -56,7 +56,12 @@ typedef struct {
 } matrix3DBigCell;
 
 typedef struct {
-	double array2D[10][6]; //using an array of structures to create [][][]
+	double array2D[10][6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+														//using an array of structures to create [][][]
 } matrix3DBigAct;
 
 typedef struct {
@@ -72,8 +77,6 @@ typedef struct {
 	matrix3DBigCell positionReferences[10];
 	matrix3DBigAct poseActivity[10];
 	PoseCellPosition maxActivatedCell;
-	short numCells = 1;
-	short maxNumActive = 1;
 } PoseCellStructure;
 
 
@@ -93,3 +96,36 @@ void getActivationDistribution(char offsetX, char offsetY, char offsetTheta);
 matrix3DSmall excitation_Weights[3];
 PoseCellStructure poseEnvironment;
 matrix3DSmallX2 distribution[2];
+
+void excitationMatrixSetup()
+{
+	excitation_Weights[0].array2D[0][0] =  0.0846;
+	excitation_Weights[0].array2D[0][1] =  0.2953;
+	excitation_Weights[0].array2D[0][2] =  0.0846;
+	excitation_Weights[0].array2D[1][0] =  0.2953;
+	excitation_Weights[0].array2D[1][1] =  1.0305;
+	excitation_Weights[0].array2D[1][2] =  0.2953;
+	excitation_Weights[0].array2D[2][0] =  0.0846;
+	excitation_Weights[0].array2D[2][1] =  0.2953;
+	excitation_Weights[0].array2D[2][2] =  0.0846;
+
+	excitation_Weights[1].array2D[0][0] =  0.2953;
+	excitation_Weights[1].array2D[0][1] =  1.0305;
+	excitation_Weights[1].array2D[0][2] =  0.2953;
+	excitation_Weights[1].array2D[1][0] =  1.0305;
+	excitation_Weights[1].array2D[1][1] =  3.5969;
+	excitation_Weights[1].array2D[1][2] =  1.0305;
+	excitation_Weights[1].array2D[2][0] =  0.2953;
+	excitation_Weights[1].array2D[2][1] =  1.0305;
+	excitation_Weights[1].array2D[2][2] =  0.2953;
+
+	excitation_Weights[2].array2D[0][0] =  0.0846;
+	excitation_Weights[2].array2D[0][1] =  0.2953;
+	excitation_Weights[2].array2D[0][2] =  0.0846;
+	excitation_Weights[2].array2D[1][0] =  0.2953;
+	excitation_Weights[2].array2D[1][1] =  1.0305;
+	excitation_Weights[2].array2D[1][2] =  0.2953;
+	excitation_Weights[2].array2D[2][0] =  0.0846;
+	excitation_Weights[2].array2D[2][1] =  0.2953;
+	excitation_Weights[2].array2D[2][2] =  0.0846;
+}
