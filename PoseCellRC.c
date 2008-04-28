@@ -117,7 +117,7 @@ char getWrappedTheta(char indexTheta)
 	}
 	return indexTheta;
 }
-
+/*
 //inhibition stuff
 double doInhibition(double stepSize)
 {
@@ -177,9 +177,9 @@ void doExcitation(double stepsize)
 			for(char k = 0; k < 6; k++)
 			{
 				PoseCellPosition position;
-				position.x = poseEnvironment.positionReferences[i].array2D[j][k].x
-				position.y = poseEnvironment.positionReferences[i].array2D[j][k].y
-				position.theta = poseEnvironment.positionReferences[i].array2D[j][k].theta
+				position.x = poseEnvironment.positionReferences[i].array2D[j][k].x;
+				position.y = poseEnvironment.positionReferences[i].array2D[j][k].y;
+				position.theta = poseEnvironment.positionReferences[i].array2D[j][k].theta;
 				position.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
 				if(position.ACTIVE)
 				{
@@ -236,7 +236,7 @@ void setActivition(PoseCellPosition cell, double activation)
 	}
 }
 
-
+*/
 
 ///////////////////////////
 //                       //
@@ -258,7 +258,6 @@ void initalisePose()
 	poseEnvironment.positionReferences[5].array2D[5][0].theta = startPosition.theta;
 	poseEnvironment.positionReferences[5].array2D[5][0].ACTIVE = startPosition.ACTIVE;
 	poseEnvironment.poseActivity[5].array2D[5][0] = startActivation;
-	//poseEnvironment.maxActivatedCell = startPosition;
 	poseEnvironment.maxActivatedCell.x = startPosition.x;
 	poseEnvironment.maxActivatedCell.y = startPosition.y;
 	poseEnvironment.maxActivatedCell.theta = startPosition.theta;
@@ -266,7 +265,53 @@ void initalisePose()
 	excitationMatrixSetup();
 }
 
+////////////////////////////
+//                       	//
+// Path integration stuff //
+//                       	//
+////////////////////////////
 
+void pathIntegrateCell(PoseCellPosition cell, char translationX, char translationY)
+{
+		for(char relativeX = 0; relativeX < 2; relativeX++)
+		{
+			char x = getWrappedX(cell.x + relativeX + translationX);
+
+			for(char relativeY = 0; relativeY < 2; relativeY++)
+			{
+				char y = getWrappedY(cell.y + relativeY + translationY);
+
+				for(char relativeTheta = 0; relativeTheta < 2; relativeTheta++)
+				{
+					char theta = getWrappedTheta(cell.theta + 0 + relativeTheta);
+
+					poseEnvironment.poseActivity[x].array2D[y][theta] += distribution[relativeX].array2D[relativeY][relativeTheta];
+				}
+			}
+		}
+}
+
+void getActivationDistribution(char offsetX, char offsetY, char offsetTheta)
+{
+	char signX = -1;
+	for(char x = 0; x < 2; x++)
+	{
+		char signY = -1;
+		for(char y = 0; y < 2; y++)
+		{
+			char signTheta = -1;
+			for(char theta = 0; theta < 2; theta++)
+			{
+				double portion = 	((1-x) + signX * offsetX) *	((1-y) + signY * offsetY) *	((1-theta) + signTheta * offsetTheta);
+				distribution[x].array2D[y][theta] = portion;
+
+				signTheta = +1;
+			}
+			signY = +1;
+		}
+		signX = +1;
+	}
+}
 ///////////////////////////
 //                       //
 // Drawing Pose Cells    //
