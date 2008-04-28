@@ -47,35 +47,35 @@
 
 void excitationMatrixSetup()
 {
-	excitation_Weights[1].array2D[1][1] = 0.0846;
-	excitation_Weights[1].array2D[1][2] = 0.2953;
-	excitation_Weights[1].array2D[1][3] = 0.0846;
-	excitation_Weights[1].array2D[2][1] = 0.2953;
-	excitation_Weights[1].array2D[2][2] = 1.0305;
-	excitation_Weights[1].array2D[2][3] = 0.2953;
-	excitation_Weights[1].array2D[3][1] = 0.0846;
-	excitation_Weights[1].array2D[3][2] = 0.2953;
-	excitation_Weights[1].array2D[3][3] = 0.0846;
+	excitation_Weights[0].array2D[0][0] = 0.0846;
+	excitation_Weights[0].array2D[0][1] = 0.2953;
+	excitation_Weights[0].array2D[0][2] = 0.0846;
+	excitation_Weights[0].array2D[1][0] = 0.2953;
+	excitation_Weights[0].array2D[1][1] = 1.0305;
+	excitation_Weights[0].array2D[1][2] = 0.2953;
+	excitation_Weights[0].array2D[2][0] = 0.0846;
+	excitation_Weights[0].array2D[2][1] = 0.2953;
+	excitation_Weights[0].array2D[2][2] = 0.0846;
 
-	excitation_Weights[2].array2D[1][1] = 0.2953;
-	excitation_Weights[2].array2D[1][2] = 1.0305;
-	excitation_Weights[2].array2D[1][3] = 0.2953;
-	excitation_Weights[2].array2D[2][1] = 1.0305;
-	excitation_Weights[2].array2D[2][2] = 3.5969;
-	excitation_Weights[2].array2D[2][3] = 1.0305;
-	excitation_Weights[2].array2D[3][1] = 0.2953;
-	excitation_Weights[2].array2D[3][2] = 1.0305;
-	excitation_Weights[2].array2D[3][3] = 0.2953;
+	excitation_Weights[1].array2D[0][0] = 0.2953;
+	excitation_Weights[1].array2D[0][1] = 1.0305;
+	excitation_Weights[1].array2D[0][2] = 0.2953;
+	excitation_Weights[1].array2D[1][0] = 1.0305;
+	excitation_Weights[1].array2D[1][1] = 3.5969;
+	excitation_Weights[1].array2D[1][2] = 1.0305;
+	excitation_Weights[1].array2D[2][0] = 0.2953;
+	excitation_Weights[1].array2D[2][1] = 1.0305;
+	excitation_Weights[1].array2D[2][2] = 0.2953;
 
-	excitation_Weights[3].array2D[1][1] = 0.0846;
-	excitation_Weights[3].array2D[1][2] = 0.2953;
-	excitation_Weights[3].array2D[1][3] = 0.0846;
-	excitation_Weights[3].array2D[2][1] = 0.2953;
-	excitation_Weights[3].array2D[2][2] = 1.0305;
-	excitation_Weights[3].array2D[2][3] = 0.2953;
-	excitation_Weights[3].array2D[3][1] = 0.0846;
-	excitation_Weights[3].array2D[3][2] = 0.2953;
-	excitation_Weights[3].array2D[3][3] = 0.0846;
+	excitation_Weights[2].array2D[0][0] = 0.0846;
+	excitation_Weights[2].array2D[0][1] = 0.2953;
+	excitation_Weights[2].array2D[0][2] = 0.0846;
+	excitation_Weights[2].array2D[1][0] = 0.2953;
+	excitation_Weights[2].array2D[1][1] = 1.0305;
+	excitation_Weights[2].array2D[1][2] = 0.2953;
+	excitation_Weights[2].array2D[2][0] = 0.0846;
+	excitation_Weights[2].array2D[2][1] = 0.2953;
+	excitation_Weights[2].array2D[2][2] = 0.0846;
 }
 
 //wrapping stuff
@@ -131,15 +131,15 @@ double doInhibition(double stepSize)
 		{
 			for(char z = 0; z < 6; z++)
 			{
-				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
-				if(position.ACTIVE) //only touch cells that are active - not the best way of doing this but will do for testing
+				char isActive = poseEnvironment.positionReferences[x].array2D[y][z].ACTIVE;
+				if(isActive) //only touch cells that are active - not the best way of doing this but will do for testing
 				{
 					double activation = poseEnvironment.poseActivity[x].array2D[y][z] - inhibition;
 					if(activation <= 0)
 					{
 					activation = 0;
 					}
-					setActivition(position, activation);
+					//setActivition(position, activation);
 					activationSum += activation;
 				}
 			}
@@ -157,8 +157,8 @@ void doNormalisation(double activationSum)
 		{
 			for(char z = 0; z < 6; z++)
 			{
-				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
-				if(position.ACTIVE)
+				char isActive = poseEnvironment.positionReferences[x].array2D[y][z].ACTIVE;
+				if(isActive)
 				{
 					poseEnvironment.poseActivity[x].array2D[y][z] /= activationSum;
 				}
@@ -170,16 +170,20 @@ void doNormalisation(double activationSum)
 //Excitation
 void doExcitation(double stepsize)
 {
-	for(char x = 0; x < 10; x++)
+	for(char i = 0; i < 10; i++)
 	{
-		for(char y = 0; y < 10; y++)
+		for(char j = 0; j < 10; j++)
 		{
-			for(char z = 0; z < 6; z++)
+			for(char k = 0; k < 6; k++)
 			{
-				PoseCellPosition position = poseEnvironment.positionReferences[x].array2D[y][z];
+				PoseCellPosition position;
+				position.x = poseEnvironment.positionReferences[i].array2D[j][k].x
+				position.y = poseEnvironment.positionReferences[i].array2D[j][k].y
+				position.theta = poseEnvironment.positionReferences[i].array2D[j][k].theta
+				position.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
 				if(position.ACTIVE)
 				{
-					double thisActivation = poseEnvironment.poseActivity[x].array2D[y][z];
+					double thisActivation = poseEnvironment.poseActivity[i].array2D[j][k];
 					for(char relX = -influenceXY; relX <= influenceXY; relX++)
 					{
 						char neighbourX = getWrappedX(position.x + relX);
@@ -205,7 +209,12 @@ void doExcitation(double stepsize)
 void setActivition(PoseCellPosition cell, double activation)
 {
 	double previousActivation = poseEnvironment.poseActivity[cell.x].array2D[cell.y][cell.theta];
-	PoseCellPosition maxPose = poseEnvironment.maxActivatedCell;
+
+	PoseCellPosition maxPose;
+	maxPose.x = poseEnvironment.maxActivatedCell.x;
+	maxPose.y = poseEnvironment.maxActivatedCell.y;
+	maxPose.theta = poseEnvironment.maxActivatedCell.theta;
+
 	if(previousActivation == activation)
 	{
 		return;
@@ -219,12 +228,15 @@ void setActivition(PoseCellPosition cell, double activation)
 		cell.ACTIVE = 1;
 	}
 	poseEnvironment.poseActivity[cell.x].array2D[cell.y][cell.theta] = activation;
-	poseEnvironment.positionReferences[cell.x].array2D[cell.y][cell.theta] = cell;
 	if(activation > PoseCellStructure.poseActivity[maxPose.x].array2D[maxPose.y][maxPose.theta])
 	{
-		poseEnvironment.maxActivatedCell = cell;
+		poseEnvironment.maxActivatedCell.x = cell.x;
+		poseEnvironment.maxActivatedCell.y = cell.y;
+		poseEnvironment.maxActivatedCell.theta = cell.theta;
 	}
 }
+
+
 
 ///////////////////////////
 //                       //
@@ -241,10 +253,36 @@ void initalisePose()
 	startPosition.y = 5;
 	startPosition.theta = 0;
 	startPosition.ACTIVE = 1;
-	poseEnvironment.positionReferences[5].array2D[5][0] = startPosition;
+	poseEnvironment.positionReferences[5].array2D[5][0].x = startPosition.x;
+	poseEnvironment.positionReferences[5].array2D[5][0].y = startPosition.y;
+	poseEnvironment.positionReferences[5].array2D[5][0].theta = startPosition.theta;
+	poseEnvironment.positionReferences[5].array2D[5][0].ACTIVE = startPosition.ACTIVE;
 	poseEnvironment.poseActivity[5].array2D[5][0] = startActivation;
-	poseEnvironment.maxActivatedCell = startPosition;
+	//poseEnvironment.maxActivatedCell = startPosition;
+	poseEnvironment.maxActivatedCell.x = startPosition.x;
+	poseEnvironment.maxActivatedCell.y = startPosition.y;
+	poseEnvironment.maxActivatedCell.theta = startPosition.theta;
+	poseEnvironment.maxActivatedCell.ACTIVE = startPosition.ACTIVE;
 	excitationMatrixSetup();
+}
+
+
+///////////////////////////
+//                       //
+// Drawing Pose Cells    //
+//                       //
+///////////////////////////
+
+void displayMaxPoseCell()
+{
+	eraseDisplay();
+	PoseCellPosition position;
+	position.y= poseEnvironment.maxActivatedCell.y;
+	position.x = poseEnvironment.maxActivatedCell.x;
+	int top = (int) position.y;
+	int left = (int) position.x;
+	nxtDisplayString(1, "%d %d", top, left);
+	nxtFillRect(left, top + 6, left + 10, top);
 }
 
 
@@ -258,6 +296,10 @@ void initalisePose()
 task main()
 {
 	initalisePose();
-
-	 //starting pose cell due to robotC not allowing Pose position struct to be returned
+	eraseDisplay();
+	nxtDisplayCenteredTextLine(2, "3D Pose Cells");
+  wait10Msec(100);
+  displayMaxPoseCell();
+	wait10Msec(1000);
+	//starting pose cell due to robotC not allowing Pose position struct to be returned
  }
