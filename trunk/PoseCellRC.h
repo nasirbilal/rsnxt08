@@ -63,6 +63,10 @@ typedef struct {
 	double array2D[3][3];
 } matrix3DSmall;
 
+typedef struct {
+	double array2D[2][2];
+} matrix3DSmallX2;
+
 
 typedef struct {
 	matrix3DBigCell positionReferences[10];
@@ -85,3 +89,4 @@ char getWrappedY(char indexY);
 char getWrappedTheta(char indexTheta);
 matrix3DSmall excitation_Weights[3];
 PoseCellStructure poseEnvironment;
+matrix3DSmallX2 distribution[2];
