@@ -464,6 +464,48 @@ void initialisePose()
 
 }
 
+//////////////////////////////////////
+//                                  //
+//   Function that runs everthing   //
+//                                  //
+//////////////////////////////////////
+
+void pose3D(char translationX, char translationY)
+{
+	//loop
+	char i;
+	char j;
+	char k;
+
+	//variables
+	float activeSum;
+
+	//correct any cells that are active and shouldn't be
+	checkActive();
+
+	for(i = 0; i < 10; i++)
+	{
+		for(j = 0; j < 10; j++)
+		{
+			for(k = 0; k < 6; k++)
+			{
+				position.x = poseEnvironment.positionReferences[i].array2D[j][k].x;
+				position.y = poseEnvironment.positionReferences[i].array2D[j][k].y;
+				position.theta = poseEnvironment.positionReferences[i].array2D[j][k].theta;
+				position.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
+				if(position.ACTIVE)
+				{
+					pathIntegrateCell(position.x, position.y, position.theta, position.ACTIVE, translationX, translationY);
+				}
+			}
+		}
+	}
+	doExcitation();
+	activeSum = doInhibition();
+	doNormalisation(activeSum);
+}
+
+
 //////////////////////////////
 //                          //
 //   Visualise pose stuff   //
@@ -491,8 +533,8 @@ void displayMaxPoseCell()
 task main()
 {
 	//button stuff for path integration
-	//nNxtButtonTask  = -2;
-	//nNxtExitClicks = 5;
+	nNxtButtonTask  = -2;
+	nNxtExitClicks = 5;
 	TButtons nBtn;
 
 	initialisePose();
@@ -502,7 +544,7 @@ task main()
   displayMaxPoseCell();
   while(true)
   {
-  /*
+
 		if((nBtn = nNxtButtonPressed) > -1)
 		{
 			switch(nBtn)
@@ -514,7 +556,7 @@ task main()
 				default: break;
 			}
 
-		}*/
+		}
 	}
-	//starting pose cell due to robotC not allowing Pose position struct to be returned
+
 }
