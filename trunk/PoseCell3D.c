@@ -109,6 +109,7 @@ void setupPoseStructure()
 				poseEnvironment.positionReferences[i].array2D[j][k].y = j;
 				poseEnvironment.positionReferences[i].array2D[j][k].theta = k;
 				poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE = 0;
+				poseEnvironment.poseActivity[i].array2D[j][k] = 0;
 			}
 		}
 	}
