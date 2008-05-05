@@ -56,7 +56,7 @@ typedef struct {
 } matrix3DBigCell;
 
 typedef struct {
-	double array2D[10][6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+	float array2D[10][6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 														0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -65,11 +65,11 @@ typedef struct {
 } matrix3DBigAct;
 
 typedef struct {
-	double array2D[3][3];
+	float array2D[3][3];
 } matrix3DSmall;
 
 typedef struct {
-	double array2D[2][2];
+	float array2D[2][2];
 } matrix3DSmallX2;
 
 
@@ -81,10 +81,10 @@ typedef struct {
 
 
 
-void doExcitation(double stepsize);
-double doInhibition(double stepSize);
-void doNormalisation(double activationSum);
-//void setActivition(char x, char y, char theta, char ACTIVE, double activation);
+void doExcitation(float stepsize);
+float doInhibition(float stepSize);
+void doNormalisation(float activationSum);
+void setActivition(char x, char y, char theta, char ACTIVE, float activation);
 void excitationMatrixSetup();
 char getWrappedX(char indexX);
 char getWrappedY(char indexY);
