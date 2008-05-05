@@ -208,7 +208,7 @@ void setActivition(char i, char j, char k, char ACTIVE, float activation)
 	{
 		return;
 	}
-	else if(activation == 0)
+	else if(activation <= 0)
 	{
 		ACTIVE = 0;
 	  poseEnvironment.poseActivity[i].array2D[j][k] = 0;
@@ -217,15 +217,60 @@ void setActivition(char i, char j, char k, char ACTIVE, float activation)
 	else
 	{
 		poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE = 1;
-	}
-	poseEnvironment.poseActivity[i].array2D[j][k] = activation;
-	if(activation > poseEnvironment.poseActivity[maxX].array2D[maxY][maxTheta])
-	{
-		poseEnvironment.maxActivatedCell.x = i;
-		poseEnvironment.maxActivatedCell.y = j;
-		poseEnvironment.maxActivatedCell.theta = k;
+		poseEnvironment.poseActivity[i].array2D[j][k] = activation;
+	  return;
 	}
 }
+
+/////////////////////////
+//                     //
+//    Find Maximum     //
+//                     //
+/////////////////////////
+
+void findMaximum()
+{
+	//loop
+	char i;
+	char j;
+	char k;
+
+	//max activated cell stuff
+	char mX;
+	char mY;
+  char mTheta;
+	float currentMaximum;
+	float tempMaximum;
+
+	mX = poseEnvironment.maxActivatedCell.x;
+	mY = poseEnvironment.maxActivatedCell.y;
+	mTheta = poseEnvironment.maxActivatedCell.theta;
+	currentMaximum = poseEnvironment.poseActivity[mX].array2D[mY][mTheta];
+	tempMaximum = 0.0;
+
+	for(i = 0; i < sizeX; i++)
+	{
+		for(j = 0; j < sizeY; j++)
+		{
+			for(k = 0; k < sizeTheta; k++)
+			{
+				tempMaximum = poseEnvironment.poseActivity[i].array2D[j][k];
+				if(tempMaximum > currentMaximum)
+				{
+					currentMaximum = tempMaximum;
+					mX = i;
+					mY = j;
+					mTheta = k;
+				}
+			}
+		}
+	}
+  poseEnvironment.maxActivatedCell.x = mX;
+  poseEnvironment.maxActivatedCell.y = mY;
+  poseEnvironment.maxActivatedCell.theta = mTheta;
+}
+
+
 
 //////////////////////////
 //                      //
@@ -501,9 +546,11 @@ void pose3D(char translationX, char translationY)
 			}
 		}
 	}
+	checkActive();
 	doExcitation();
 	activeSum = doInhibition();
 	doNormalisation(activeSum);
+	findMaximum();
 }
 
 
@@ -519,9 +566,13 @@ void displayMaxPoseCell()
 	eraseDisplay();
 	position.y = poseEnvironment.maxActivatedCell.y;
 	position.x = poseEnvironment.maxActivatedCell.x;
+	position.theta = poseEnvironment.maxActivatedCell.theta;
 	char top = position.y;
 	char left = position.x;
-	nxtDisplayString(1, "%d %d", top, left);
+	char angle = position.theta;
+	float maxActivation = poseEnvironment.poseActivity[left].array2D[top][angle];
+	nxtDisplayString(1, "%d, %d", top, left);
+	nxtDisplayString(2, "= %f", maxActivation);
 	nxtFillRect(left, top + 6, left + 10, top);
 }
 
