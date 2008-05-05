@@ -79,8 +79,8 @@ typedef struct {
 ///////////////////////////
 
 void doExcitation();
-float doInhibition();
-void doNormalisation(float activationSum);
+void doInhibition();
+void doNormalisation();
 void setActivition(char i, char j, char k, char ACTIVE, float activation);
 void excitationMatrixSetup();
 char getWrappedX(char indexX);
@@ -94,3 +94,5 @@ matrixExcite excitation_Weights[3];
 PoseCellStructure poseEnvironment;
 matrixDistribution distribution[2];
 PoseCellPosition position; //for any cell stuff
+float activationSum = 0; // for inhibition / normalisation
+float inhibition = globalInhibition * stepsize;
