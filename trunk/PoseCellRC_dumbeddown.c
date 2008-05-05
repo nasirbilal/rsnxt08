@@ -9,8 +9,8 @@
 //                                        2d form, only showing a x and y plot and ignoring theta. // // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //      Changes made from orignal code to make this work.
-//                              - cell sizes are now smaller, going to try a 10x10x6 instead
-//                              - only going to use int instead of doubles, or even chars.
+//                              - cell sizes are now smaller, going to try a 6x6x6 instead
+//                              - only going to use int instead of floats, or even chars.
 //                              - establish excitation matrix by hand (used matlab)
 //
 //
@@ -18,6 +18,7 @@
 //
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #pragma platform(NXT)
 ///////////////////////////
@@ -42,6 +43,8 @@
 //                         //
 /////////////////////////////
 
+//established it like this to try and take some computational strain off NXT
+
 //initalise all pose cell attributes
 void setupPoseStructure()
 {
@@ -58,6 +61,7 @@ void setupPoseStructure()
 			}
 		}
 	}
+
 }
 
 //wrapping stuff
@@ -117,22 +121,29 @@ void checkActive()
 		}
 	}
 }
-
-
-//using setActivation
 /*
-void setActivition(char x, char y, char theta, char ACTIVE, double activation)
+//using setActivation
+void setActivition(char x, char y, char theta, char ACTIVE, float activation)
 {
-	double previousActivation = poseEnvironment.poseActivity[x].array2D[y][theta];
-	int maxX = (int) poseEnvironment.maxActivatedCell.x;
-	int maxY = (int) poseEnvironment.maxActivatedCell.y;
-	int maxTheta = (int) poseEnvironment.maxActivatedCell.theta;
+
+	PoseCellPosition cell;
+	cell.x = x;
+	cell.y = y;
+	cell.theta = theta;
+	cell.ACTIVE = ACTIVE;
+
+	float previousActivation = poseEnvironment.poseActivity[x].array2D[y][theta];
+
+	PoseCellPosition maxPose;
+	maxPose.x = poseEnvironment.maxActivatedCell.x;
+	maxPose.y = poseEnvironment.maxActivatedCell.y;
+	maxPose.theta = poseEnvironment.maxActivatedCell.theta;
 
 	if(previousActivation == activation)
 	{
 		return;
 	}
-	else if(activation == 0)
+	if(activation == 0)
 	{
 		ACTIVE = 0;
 	}
@@ -141,21 +152,21 @@ void setActivition(char x, char y, char theta, char ACTIVE, double activation)
 		poseEnvironment.positionReferences[x].array2D[y][theta].ACTIVE = 1;
 	}
 	poseEnvironment.poseActivity[x].array2D[y][theta] = activation;
-	if(activation > poseEnvironment.poseActivity[maxX].array2D[maxY][maxTheta])
+	if(activation > PoseCellStructure.poseActivity[maxPose.x].array2D[maxPose.y][maxPose.theta])
 	{
 		poseEnvironment.maxActivatedCell.x = x;
 		poseEnvironment.maxActivatedCell.y = y;
 		poseEnvironment.maxActivatedCell.theta = theta;
 	}
 }
-
 */
-//inhibition stuff
-double doInhibition(double stepSize)
-{
-	float inhibition = 0.0028;
 
-	double activationSum = 0;
+//inhibition stuff
+float doInhibition(float stepSize)
+{
+	float inhibition = globalInhibition * stepSize;
+
+	float activationSum = 0;
 
 	for(char i = 0; i < 10; i++)
 	{
@@ -170,12 +181,12 @@ double doInhibition(double stepSize)
 				position1.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
 				if(position1.ACTIVE) //only touch cells that are active - not the best way of doing this but will do for testing
 				{
-					double activation = poseEnvironment.poseActivity[i].array2D[j][k] - inhibition;
+					float activation = poseEnvironment.poseActivity[i].array2D[j][k] - inhibition;
 					if(activation <= 0)
 					{
 					activation = 0;
 					}
-					//setActivition(position1.x, position1.y, position1.theta, position1.ACTIVE, activation);
+					//setActivition(position.x, position.y, position.theta, position.ACTIVE, activation);
 					activationSum += activation;
 				}
 			}
@@ -185,7 +196,7 @@ double doInhibition(double stepSize)
 }
 
 //Normalisation of activity
-void doNormalisation(double activationSum)
+void doNormalisation(float activationSum)
 {
 	for(char x = 0; x < 10; x++)
 	{
@@ -219,7 +230,7 @@ void doExcitation(float stepsize)
 				position2.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
 				if(position2.ACTIVE)
 				{
-					double thisActivation = poseEnvironment.poseActivity[i].array2D[j][k];
+					float thisActivation = poseEnvironment.poseActivity[i].array2D[j][k];
 					for(char relX = -influenceXY; relX <= influenceXY; relX++)
 					{
 						char neighbourX = getWrappedX(position2.x + relX);
@@ -229,7 +240,7 @@ void doExcitation(float stepsize)
 							for(char relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
 							{
 								char neighbourTheta = getWrappedTheta(position2.theta + relTheta);
-								float excitationWeight = (float) excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta] * 0.2;
+								float excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta] * stepsize;
 								poseEnvironment.poseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += thisActivation * excitationWeight;
 							}
 						}
@@ -250,18 +261,18 @@ void doExcitation(float stepsize)
 //Determine Startcell - currently using a global starting Pose
 void initalisePose()
 {
-	excitationMatrixSetup();
+  excitationMatrixSetup();
 	setupPoseStructure();
 	PoseCellPosition startPosition;
-	startPosition.x = 5;
-	startPosition.y = 5;
+	startPosition.x = 6;
+	startPosition.y = 6;
 	startPosition.theta = 0;
 	startPosition.ACTIVE = 1;
-	poseEnvironment.positionReferences[5].array2D[5][0].x = startPosition.x;
-	poseEnvironment.positionReferences[5].array2D[5][0].y = startPosition.y;
-	poseEnvironment.positionReferences[5].array2D[5][0].theta = startPosition.theta;
-	poseEnvironment.positionReferences[5].array2D[5][0].ACTIVE = startPosition.ACTIVE;
-	poseEnvironment.poseActivity[5].array2D[5][0] = startActivation;
+	poseEnvironment.positionReferences[6].array2D[6][0].x = startPosition.x;
+	poseEnvironment.positionReferences[6].array2D[6][0].y = startPosition.y;
+	poseEnvironment.positionReferences[6].array2D[6][0].theta = startPosition.theta;
+	poseEnvironment.positionReferences[6].array2D[6][0].ACTIVE = startPosition.ACTIVE;
+	poseEnvironment.poseActivity[6].array2D[6][0] = startActivation;
 	poseEnvironment.maxActivatedCell.x = startPosition.x;
 	poseEnvironment.maxActivatedCell.y = startPosition.y;
 	poseEnvironment.maxActivatedCell.theta = startPosition.theta;
@@ -312,7 +323,7 @@ void getActivationDistribution(char offsetX, char offsetY, char offsetTheta)
 			char signTheta = -1;
 			for(char theta = 0; theta < 2; theta++)
 			{
-				double portion = 	((1-x) + signX * offsetX) *	((1-y) + signY * offsetY) *	((1-theta) + signTheta * offsetTheta);
+				float portion = 	((1-x) + signX * offsetX) *	((1-y) + signY * offsetY) *	((1-theta) + signTheta * offsetTheta);
 				distribution[x].array2D[y][theta] = portion;
 
 				signTheta = +1;
@@ -327,27 +338,18 @@ void getActivationDistribution(char offsetX, char offsetY, char offsetTheta)
 void pose3D(char translationX, char translationY)
 {
 	checkActive();
-	for(char i = 0; i < 10; i++)
-	{
-		for(char j = 0; j < 10; j++)
-		{
-			for(char k = 0; k < 6; k++)
-			{
-				PoseCellPosition position3;
-				position3.x = poseEnvironment.positionReferences[i].array2D[j][k].x;
-				position3.y = poseEnvironment.positionReferences[i].array2D[j][k].y;
-				position3.theta = poseEnvironment.positionReferences[i].array2D[j][k].theta;
-				position3.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
-				if(position3.ACTIVE)
-				{
-					pathIntegrateCell(position3.x, position3.y, position3.theta, position3.ACTIVE, translationX, translationY);
-				}
-			}
-		}
-	}
-	doExcitation(0.02);
-	double activeSum = doInhibition(0.02);
-	doNormalisation(activeSum);
+	PoseCellPosition temp;
+
+	temp.x = poseEnvironment.maxActivatedCell.x;
+	temp.y = poseEnvironment.maxActivatedCell.y;
+	temp.theta = poseEnvironment.maxActivatedCell.theta;
+	temp.ACTIVE = 1;
+	char xNew = getWrappedX(temp.x + translationX);
+	char yNew = getWrappedY(temp.y + translationY);
+	char thetaNew = getWrappedTheta(temp.theta + 0);
+	poseEnvironment.maxActivatedCell.x = xNew;
+	poseEnvironment.maxActivatedCell.y = yNew;
+	poseEnvironment.maxActivatedCell.theta = thetaNew;
 }
 
 ///////////////////////////
@@ -362,10 +364,15 @@ void displayMaxPoseCell()
 	PoseCellPosition position4;
 	position4.y = poseEnvironment.maxActivatedCell.y;
 	position4.x = poseEnvironment.maxActivatedCell.x;
+	position4.theta = poseEnvironment.maxActivatedCell.theta;
 	int top = (int) position4.y;
 	int left = (int) position4.x;
+	float act = poseEnvironment.poseActivity[position4.x].array2D[position4.y][position4.theta];
 	nxtDisplayString(1, "%d %d", top, left);
-	nxtFillRect(left, top + 6, left + 10, top);
+	nxtDisplayString(2, "Activity %.2f", act);
+	nxtFillRect(left, top + 6, left + 6, top);
+	//nxtSetPixel(left, top);
+
 }
 
 
@@ -380,7 +387,7 @@ task main()
 {
 	//button stuff for path integration
 	nNxtButtonTask  = -2;
-	nNxtExitClicks = 5;
+	nNxtExitClicks = 6;
 	TButtons nBtn;
 
 	initalisePose();
@@ -391,7 +398,7 @@ task main()
   while(true)
   {
 
-		if((nBtn = nNxtButtonPressed) > -1)
+		if((nBtn = nNxtButtonPressed) > 0)
 		{
 			switch(nBtn)
 			{
