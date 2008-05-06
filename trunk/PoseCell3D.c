@@ -38,7 +38,7 @@
 ///////////////////////////
 
 #include "PoseCell3D.h"
-
+int numActive = 0;
 /////////////////////////////
 //                         //
 // Excitatory Matrix stuff //
@@ -320,6 +320,7 @@ void doNormalisation()
   char j;
   char k;
   char isActive;
+  numActive = 0;
 
   for(i = 0; i < sizeX; i++)
   {
@@ -331,7 +332,8 @@ void doNormalisation()
         if(isActive)
         {
           poseEnvironment.poseActivity[i].array2D[j][k] /= activationSum;
-        }
+          numActive++;
+         }
       }
     }
   }
@@ -504,7 +506,7 @@ void initialisePose()
   poseEnvironment.maxActivatedCell.y = position.y;
   poseEnvironment.maxActivatedCell.theta = position.theta;
   poseEnvironment.maxActivatedCell.ACTIVE = position.ACTIVE;
-
+  numActive = 1;
 }
 
 //////////////////////////////////////
@@ -570,6 +572,7 @@ void displayMaxPoseCell()
   float maxActivation = poseEnvironment.poseActivity[left].array2D[top][angle];
   nxtDisplayString(1, "%d, %d", top, left);
   nxtDisplayString(2, "Act = %4.3f", maxActivation);
+  nxtDisplayString(3, "Num Act. = %d", numActive);
   nxtFillRect(left, top + 6, left + 10, top);
 }
 
