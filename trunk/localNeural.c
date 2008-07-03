@@ -21,13 +21,16 @@ const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//  Changes:- (1st Version)
-//
-//
-//
-//
-//
-//
+//  Changes(*)/things to do(-):- (1st Version)
+//   -continue testing if cells match
+//   -also a way to test wat part of local cell structure is empty to put in new local cells
+//    currently done with a counter holding the position of the next empty cell
+//   -determine wat angle is appropriate
+//   -determine memory load of using float, possibly use float for calcs then multiply by say 10 or 100
+//    and store as char or int to save memory
+//   -whether to use acos() or just use the dot multipy value for comparison.
+//   -size of local cell struct
+//   -linking with pose cells
 //
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,12 +48,13 @@ const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!
 //       Variable        //
 //                       //
 ///////////////////////////
-float localTemp[12];
-float localComparison[12];
-int rightSonarValue;
+float localTemp[12]; //holds the temporary neural value
+float localComparison[12]; //what the local cell data is loaded into
+int rightSonarValue; //obvious
 int leftSonarValue;
 int centreSonarValue;
-float tempCalc = 0;
+float tempCalc = 0; //used for the calcs of the neural networks only used in sensor stuff
+char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 
 ///////////////////////////
 //                       //
@@ -60,6 +64,7 @@ float tempCalc = 0;
 
 void clearTemp()
 {
+	//clears the temp file
 	char x;
   for (x = 0; x<12; x++)
   {
@@ -165,26 +170,28 @@ void dotMultiply(float array1[12], float array2[12])
 }
 */
 
-void dotMultiply()
+float dotMultiply()
 {
   char i;
-  float tempArray[12];
+  float dotValue = 0;
   for(i = 0; i < 12; i++)
   {
-    tempArray[i] = localTemp[i] * localComparison[i];
+    dotValue = dotValue + localTemp[i] * localComparison[i];
   }
-  localTemp = tempArray;
+  return dotValue;
 }
 
 void normaliseTemp()
 {
-//will normalise the temp
+//will normalise the temp ||a|| = sqrt(a1^2 + a2^2 + a3^3)
+//normalise by a/||a||
 	float tempTotal = 0;
 	char y;
 	for(y = 0; y < 12; y++)
 	{
-		tempTotal = tempTotal + localTemp[y];
+		tempTotal = tempTotal + localTemp[y]^2;
 	}
+	tempTotal = sqrt(tempTotal);
 	for(y = 0; y < 12; y++)
 	{
 	  localTemp[y] = localTemp[y]/tempTotal;
@@ -200,6 +207,38 @@ void setTemp()
 	normaliseTemp();
 }
 
+void checkLocalCell()
+{
+	char z;
+	float dotTempValue;
+	float holderCell[12];
+	holderCell = localTemp;
+  for(z = 0; z<numLocalCells; z++)
+  {
+  	if(localCellStruct[0].ACTIVE)
+  	{
+  	  while(localCellStruct[z].ACTIVE)
+  	  {
+        localComparison = localCellStruct[z].localCellTemp; //load local cell data
+        dotTempValue = dotMultiply(); //dot multiply for comparison
+        if(acos(dotTempValue)<50)
+        {
+          //therefore no match
+        	localCellStruct[nextEmptyCell].localCellTemp = holderCell; //new local cell = current data
+          localCellStruct[nextEmptyCell].ACTIVE = 1; //make active
+          nextEmptyCell++; //increase count for nextEmptyCell
+        }
+      }
+    }
+    else {
+    localCellStruct[0].localCellTemp = holderCell;
+    localCellStruct[0].ACTIVE = 1;
+    nextEmptyCell++;
+    }
+  }
+
+
+}
 
 task main ()
 {
@@ -236,6 +275,9 @@ task main ()
     nxtDisplayStringAt(13, 10, "L");
     nxtDisplayStringAt(40, 10, "C");
     nxtDisplayStringAt(69, 10, "R");
+    wait1Msec(1000);
+
+    nxtDisplayCenteredTextLine(1,"Normalised");
     wait1Msec(100);
   }
 
