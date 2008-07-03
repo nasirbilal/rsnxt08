@@ -32,6 +32,7 @@ char firstUnit = 15;
 char secondUnit = 45;
 char thirdUnit = 75;
 char fourthUnit = 105;
+const char numLocalCells = 10;
 
 ///////////////////////////
 //                       //
@@ -41,13 +42,11 @@ char fourthUnit = 105;
 
 typedef struct
 {
+//used to store normalised localTemp arrays that are 'new' and dont already exist.
 	float localCellTemp[12];
+	char ACTIVE;
 } localCell;
 
-typedef struct
-{
-	localCell localCellArray[100];
-} localCellStruct;
 
 ///////////////////////////
 //                       //
@@ -61,4 +60,5 @@ void setCentre();
 void setLeft();
 void normaliseTemp();
 void setTemp();
-void dotMultiply();
+float dotMultiply();
+localCell localCellStruct[numLocalCells];
