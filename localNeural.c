@@ -23,17 +23,16 @@ const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  Changes(*)/things to do(-)/what works("):- (1st Version)
 //   -continue testing if cells match
-//   -also a way to test wat part of local cell structure is empty to put in new local cells
-//    currently done with a counter holding the position of the next empty cell
-//   -determine wat angle is appropriate
 //   -determine memory load of using float, possibly use float for calcs then multiply by say 10 or 100
 //    and store as char or int to save memory
 //   -whether to use acos() or just use the dot multiply value for comparison.
 //   -size of local cell struct
 //   -linking with pose cells
 //   "dotMuliply function works as advertised and normalises the neural data.
-//
-//
+//   *<0.3 is a match (radians)
+//   "Reading and comparing local cells works - just need to tweak the angle value
+//   *Now equations will not doing anything when a value of an array = 0 - thus speeding up system
+//   *now testing with four units with greater difference between them range ~0-200 cm
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////
@@ -49,12 +48,11 @@ const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!
 //       Variable        //
 //                       //
 ///////////////////////////
-float localTemp[12]; //holds the temporary neural value
-float localComparison[12]; //what the local cell data is loaded into
+float localTemp[numNeuralUnits]; //holds the temporary neural value
+float localComparison[numNeuralUnits]; //what the local cell data is loaded into
 int rightSonarValue; //obvious
 int leftSonarValue;
 int centreSonarValue;
-float tempCalc = 0; //used for the calcs of the neural networks only used in sensor stuff
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 
 ///////////////////////////
@@ -67,38 +65,48 @@ void clearTemp()
 {
 	//clears the temp file
 	char x;
-  for (x = 0; x<12; x++)
+  for (x = 0; x<numNeuralUnits; x++)
   {
     localTemp[x] = 0;
+    localComparison[x] = 0;
   }
 }
+
+/*
+' change to five neural units and change distance between them.
+'
+*/
 
 void setRight()
 {
 	//This function allocates a proportion to each neural unit based on the value returned by the sonar sensor
 	rightSonarValue = SensorValue(rightSonar);
-	tempCalc = 0;
+	float tempCalcR = 0;
 	if(rightSonarValue <= firstUnit)
 	{
     localTemp[8] = (float) (1 - (firstUnit - rightSonarValue)/firstUnit);
 	}
   else if(rightSonarValue > firstUnit && rightSonarValue <= secondUnit)
   {
-  	tempCalc = (float) (secondUnit - rightSonarValue)/(secondUnit - firstUnit);
-    localTemp[8] = tempCalc;
-  	localTemp[9] = 1- tempCalc;
+  	tempCalcR = (float) (secondUnit - rightSonarValue)/(secondUnit - firstUnit);
+    localTemp[8] = tempCalcR;
+  	localTemp[9] = 1- tempCalcR;
   }
   else if(rightSonarValue > secondUnit && rightSonarValue <= thirdUnit)
   {
-  	tempCalc = (float) (thirdUnit - rightSonarValue)/(thirdUnit - secondUnit);
-    localTemp[9] = tempCalc;
-  	localTemp[10] = 1 - tempCalc;
+  	tempCalcR = (float) (thirdUnit - rightSonarValue)/(thirdUnit - secondUnit);
+    localTemp[9] = tempCalcR;
+  	localTemp[10] = 1 - tempCalcR;
   }
   else if(rightSonarValue > thirdUnit && rightSonarValue <= fourthUnit)
   {
-  	tempCalc = (float) (fourthUnit - rightSonarValue)/(fourthUnit - thirdUnit);
-    localTemp[10] = tempCalc;
-  	localTemp[11] = 1 - tempCalc;
+  	tempCalcR = (float) (fourthUnit - rightSonarValue)/(fourthUnit - thirdUnit);
+    localTemp[10] = tempCalcR;
+  	localTemp[11] = 1 - tempCalcR;
+  }
+  else if(rightSonarValue > fourthUnit)
+  {
+    localTemp[11] = 1;
   }
 }
 
@@ -106,78 +114,89 @@ void setCentre()
 {
 	//This function allocates a proportion to each neural unit based on the value returned by the sonar sensor
 	centreSonarValue = SensorValue(centreSonar);
-	tempCalc = 0;
+	float tempCalcC = 0;
 	if(centreSonarValue <= firstUnit)
 	{
     localTemp[4] = (float) (1 - (firstUnit - centreSonarValue)/firstUnit);
 	}
   else if(centreSonarValue > firstUnit && centreSonarValue <= secondUnit)
   {
-  	tempCalc = (float) (secondUnit - centreSonarValue)/(secondUnit - firstUnit);
-    localTemp[4] = tempCalc;
-  	localTemp[5] = 1- tempCalc;
+  	tempCalcC = (float) (secondUnit - centreSonarValue)/(secondUnit - firstUnit);
+    localTemp[4] = tempCalcC;
+  	localTemp[5] = 1- tempCalcC;
   }
   else if(centreSonarValue > secondUnit && centreSonarValue <= thirdUnit)
   {
-  	tempCalc = (float) (thirdUnit - centreSonarValue)/(thirdUnit - secondUnit);
-    localTemp[5] = tempCalc;
-  	localTemp[6] = 1 - tempCalc;
+  	tempCalcC = (float) (thirdUnit - centreSonarValue)/(thirdUnit - secondUnit);
+    localTemp[5] = tempCalcC;
+  	localTemp[6] = 1 - tempCalcC;
   }
   else if(centreSonarValue > thirdUnit && centreSonarValue <= fourthUnit)
   {
-  	tempCalc = (float) (fourthUnit - centreSonarValue)/(fourthUnit - thirdUnit);
-    localTemp[6] = tempCalc;
-  	localTemp[7] = 1 - tempCalc;
+  	tempCalcC = (float) (fourthUnit - centreSonarValue)/(fourthUnit - thirdUnit);
+    localTemp[6] = tempCalcC;
+  	localTemp[7] = 1 - tempCalcC;
+  }
+  else if(centreSonarValue > fourthUnit)
+  {
+    localTemp[7] = 1;
   }
 }
 
 void setLeft()
 {
 	leftSonarValue = SensorValue(leftSonar);
-	tempCalc = 0;
+	float tempCalcL = 0;
 	if(leftSonarValue <= firstUnit)
 	{
     localTemp[0] = (float) (1 - (firstUnit - leftSonarValue)/firstUnit);
 	}
   else if(leftSonarValue > firstUnit && leftSonarValue <= secondUnit)
   {
-  	tempCalc = (float) (secondUnit - leftSonarValue)/(secondUnit - firstUnit);
-    localTemp[0] = tempCalc;
-  	localTemp[1] = 1- tempCalc;
+  	tempCalcL = (float) (secondUnit - leftSonarValue)/(secondUnit - firstUnit);
+    localTemp[0] = tempCalcL;
+  	localTemp[1] = 1- tempCalcL;
   }
   else if(leftSonarValue > secondUnit && leftSonarValue <= thirdUnit)
   {
-  	tempCalc = (float) (thirdUnit - leftSonarValue)/(thirdUnit - secondUnit);
-    localTemp[1] = tempCalc;
-  	localTemp[2] = 1 - tempCalc;
+  	tempCalcL = (float) (thirdUnit - leftSonarValue)/(thirdUnit - secondUnit);
+    localTemp[1] = tempCalcL;
+  	localTemp[2] = 1 - tempCalcL;
   }
   else if(leftSonarValue > thirdUnit && leftSonarValue <= fourthUnit)
   {
-  	tempCalc = (float) (fourthUnit - leftSonarValue)/(fourthUnit - thirdUnit);
-    localTemp[2] = tempCalc;
-  	localTemp[3] = 1 - tempCalc;
+  	tempCalcL = (float) (fourthUnit - leftSonarValue)/(fourthUnit - thirdUnit);
+    localTemp[2] = tempCalcL;
+  	localTemp[3] = 1 - tempCalcL;
   }
-}
-/*
-void dotMultiply(float array1[12], float array2[12])
-{
-  char i;
-  float tempArray[12];
-  for(i = 0; i < 12; i++)
+  else if(leftSonarValue > fourthUnit)
   {
-    tempArray[i] = array1[i] * array2[i];
+    localTemp[3] = 1;
   }
-  localTemp = tempArray;
 }
-*/
+
+void fillStructArray(char cellNum)
+{
+  //due to robotC being a bitch and not passing an array as a whole to another array within a structure
+	//i am forced to implement it the slow way - hopefully the next version of robotC fixes this
+	char k;
+	for(k=0; k<numNeuralUnits; k++)
+	{
+	  localCellStruct[cellNum].localCellTemp[k] = localTemp[k];
+
+	}
+}
 
 float dotMultiply()
 {
   char i;
   float dotValue = 0;
-  for(i = 0; i < 12; i++)
+  for(i = 0; i < numNeuralUnits; i++)
   {
-    dotValue = dotValue + localTemp[i] * localComparison[i];
+    if(localTemp[i]>0)
+    {
+      dotValue = dotValue + localTemp[i] * localComparison[i];
+    }
   }
   return dotValue;
 }
@@ -188,57 +207,99 @@ void normaliseTemp()
 //normalise by a/||a||
 	float tempTotal = 0;
 	char y;
-	for(y = 0; y < 12; y++)
+	for(y = 0; y < numNeuralUnits; y++)
 	{
-		tempTotal = tempTotal + localTemp[y]*localTemp[y];
+		if(localTemp[y]>0)
+		{
+		  tempTotal = tempTotal + localTemp[y]*localTemp[y];
+	  }
 	}
 	tempTotal = sqrt(tempTotal);
-	for(y = 0; y < 12; y++)
+	for(y = 0; y < numNeuralUnits; y++)
 	{
-	  localTemp[y] = (float) localTemp[y]/tempTotal;
+		if(localTemp[y]>0)
+		{
+	    localTemp[y] = (float) localTemp[y]/tempTotal;
+	  }
 	}
 }
 
 void setTemp()
 {
+	//initalises temp, get sensor readings and sets the local temp to a normalised neural vector
   clearTemp();
-	setRight();
-	setCentre();
 	setLeft();
+	setCentre();
+	setRight();
 	normaliseTemp();
 }
 
 void checkLocalCell()
 {
+	//uses a normalised version of the localTemp.  The comparison local cells are stored as normalised when 1st created
 	char z;
-	float dotTempValue;
-	float holderCell[12];
-	holderCell = localTemp;
-  for(z = 0; z<numLocalCells; z++)
-  {
-  	if(localCellStruct[0].ACTIVE)
-  	{
-  	  while(localCellStruct[z].ACTIVE)
-  	  {
-        localComparison = localCellStruct[z].localCellTemp; //load local cell data
-        dotTempValue = dotMultiply(); //dot multiply for comparison
-        if(acos(dotTempValue)<50)
-        {
-          //therefore no match
-        	localCellStruct[nextEmptyCell].localCellTemp = holderCell; //new local cell = current data
-          localCellStruct[nextEmptyCell].ACTIVE = 1; //make active
-          nextEmptyCell++; //increase count for nextEmptyCell
-        }
+	char match = 0;
+	float dotTempValue = 0;
+	float tempAngle = 0;
+	if(nextEmptyCell == 0)
+	{
+	  //first localCellView
+		fillStructArray(nextEmptyCell);
+    nextEmptyCell++;
+    eraseDisplay();
+    nxtDisplayCenteredTextLine(3, "New Cell Created");
+    wait1Msec(2000);
+    eraseDisplay();
+	}
+  else {
+    for(z = 0; z<nextEmptyCell; z++)
+    {
+    	//search for a previous local cell that matches the current view to a certain degree
+  	  localComparison[0] = localCellStruct[z].localCellTemp[0];
+  	  localComparison[1] = localCellStruct[z].localCellTemp[1];
+  	  localComparison[2] = localCellStruct[z].localCellTemp[2];
+  	  localComparison[3] = localCellStruct[z].localCellTemp[3];
+  	  localComparison[4] = localCellStruct[z].localCellTemp[4];
+  	  localComparison[5] = localCellStruct[z].localCellTemp[5];
+  	  localComparison[6] = localCellStruct[z].localCellTemp[6];
+  	  localComparison[7] = localCellStruct[z].localCellTemp[7];
+  	  localComparison[8] = localCellStruct[z].localCellTemp[8];
+  	  localComparison[9] = localCellStruct[z].localCellTemp[9];
+  	  localComparison[10] = localCellStruct[z].localCellTemp[10];
+  	  localComparison[11] = localCellStruct[z].localCellTemp[11];
+      dotTempValue = dotMultiply();
+      tempAngle = acos(dotTempValue);
+      eraseDisplay();
+      nxtDisplayString(5, "%3.3f", tempAngle);
+      wait1Msec(1000);
+      if(tempAngle<0.30)
+      {
+        //a match - need to check
+      	match = 1;
+      	break;
       }
     }
-    else {
-    localCellStruct[0].localCellTemp = holderCell;
-    localCellStruct[0].ACTIVE = 1;
-    nextEmptyCell++;
+    if(match == 0)
+    {//no match found - create a new local view cell
+    	fillStructArray(nextEmptyCell);
+    	nextEmptyCell++;
+    	eraseDisplay();
+      nxtDisplayCenteredTextLine(3, "No Match");
+      nxtDisplayCenteredTextLine(4, "New Cell Created");
+      wait1Msec(1000);
+      eraseDisplay();
     }
+
+    else if(match = 1)
+    {
+      eraseDisplay();
+      nxtDisplayCenteredTextLine(3, "Match");
+      wait1Msec(1000);
+      eraseDisplay();
+
+    }
+
   }
-
-
 }
 
 task main ()
@@ -246,73 +307,7 @@ task main ()
   while(1)
   {
     setTemp();
-    nxtDrawLine(5, 20, 94, 20);
-    nxtDrawLine(86, 0, 86, 63);
-    nxtDrawLine(26, 0, 26, 63);
-    nxtDrawLine(56, 0, 56, 63);
-    //left
-    nxtDisplayStringAt(0, 60, "%1.2f",localTemp[0]);
-    nxtDisplayStringAt(0, 50, "%1.2f",localTemp[1]);
-    nxtDisplayStringAt(0, 40, "%1.2f",localTemp[2]);
-    nxtDisplayStringAt(0, 30, "%1.2f",localTemp[3]);
-
-    //centre
-    nxtDisplayStringAt(30, 60, "%1.2f",localTemp[4]);
-    nxtDisplayStringAt(30, 50, "%1.2f",localTemp[5]);
-    nxtDisplayStringAt(30, 40, "%1.2f",localTemp[6]);
-    nxtDisplayStringAt(30, 30, "%1.2f",localTemp[7]);
-
-    //right
-    nxtDisplayStringAt(60, 60, "%1.2f",localTemp[8]);
-    nxtDisplayStringAt(60, 50, "%1.2f",localTemp[9]);
-    nxtDisplayStringAt(60, 40, "%1.2f",localTemp[10]);
-    nxtDisplayStringAt(60, 30, "%1.2f",localTemp[11]);
-
-    //TEXT
-    nxtDisplayStringAt(88, 60, "N1");
-    nxtDisplayStringAt(88, 50, "N2");
-    nxtDisplayStringAt(88, 40, "N3");
-    nxtDisplayStringAt(88, 30, "N4");
-    nxtDisplayStringAt(13, 10, "L");
-    nxtDisplayStringAt(40, 10, "C");
-    nxtDisplayStringAt(69, 10, "R");
-    wait10Msec(3000);
-    eraseDisplay();
-
-    nxtDisplayCenteredTextLine(1,"Normalised");
-    wait1Msec(2000);
-    eraseDisplay();
-
-    normaliseTemp();
-    nxtDisplayStringAt(0, 60, "%1.2f",localTemp[0]);
-    nxtDisplayStringAt(0, 50, "%1.2f",localTemp[1]);
-    nxtDisplayStringAt(0, 40, "%1.2f",localTemp[2]);
-    nxtDisplayStringAt(0, 30, "%1.2f",localTemp[3]);
-
-    //centre
-    nxtDisplayStringAt(30, 60, "%1.2f",localTemp[4]);
-    nxtDisplayStringAt(30, 50, "%1.2f",localTemp[5]);
-    nxtDisplayStringAt(30, 40, "%1.2f",localTemp[6]);
-    nxtDisplayStringAt(30, 30, "%1.2f",localTemp[7]);
-
-    //right
-    nxtDisplayStringAt(60, 60, "%1.2f",localTemp[8]);
-    nxtDisplayStringAt(60, 50, "%1.2f",localTemp[9]);
-    nxtDisplayStringAt(60, 40, "%1.2f",localTemp[10]);
-    nxtDisplayStringAt(60, 30, "%1.2f",localTemp[11]);
-
-    //TEXT
-    nxtDisplayStringAt(88, 60, "N1");
-    nxtDisplayStringAt(88, 50, "N2");
-    nxtDisplayStringAt(88, 40, "N3");
-    nxtDisplayStringAt(88, 30, "N4");
-    nxtDisplayStringAt(13, 10, "L");
-    nxtDisplayStringAt(40, 10, "C");
-    nxtDisplayStringAt(69, 10, "R");
-
-    wait10Msec(3000);
-    eraseDisplay();
-
+    checkLocalCell();
 
   }
 
