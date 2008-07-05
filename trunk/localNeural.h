@@ -32,7 +32,9 @@ char firstUnit = 15;
 char secondUnit = 45;
 char thirdUnit = 75;
 char fourthUnit = 105;
-const char numLocalCells = 10;
+char fifthUnit = 135;
+const char numLocalCells = 20;
+const char numNeuralUnits = 12;
 
 ///////////////////////////
 //                       //
@@ -43,8 +45,7 @@ const char numLocalCells = 10;
 typedef struct
 {
 //used to store normalised localTemp arrays that are 'new' and dont already exist.
-	float localCellTemp[12];
-	char ACTIVE;
+	float localCellTemp[numNeuralUnits];
 } localCell;
 
 
@@ -61,4 +62,81 @@ void setLeft();
 void normaliseTemp();
 void setTemp();
 float dotMultiply();
+void fillStructArray(char cellNum);
+void checkLocalCell();
 localCell localCellStruct[numLocalCells];
+
+///////////////////////////
+//                       //
+// Code Used for Testing //
+//                       //
+///////////////////////////
+
+/*
+ nxtDrawLine(5, 20, 94, 20);
+    nxtDrawLine(86, 0, 86, 63);
+    nxtDrawLine(26, 0, 26, 63);
+    nxtDrawLine(56, 0, 56, 63);
+    //left
+    nxtDisplayStringAt(0, 60, "%1.2f",localTemp[0]);
+    nxtDisplayStringAt(0, 50, "%1.2f",localTemp[1]);
+    nxtDisplayStringAt(0, 40, "%1.2f",localTemp[2]);
+    nxtDisplayStringAt(0, 30, "%1.2f",localTemp[3]);
+
+    //centre
+    nxtDisplayStringAt(30, 60, "%1.2f",localTemp[4]);
+    nxtDisplayStringAt(30, 50, "%1.2f",localTemp[5]);
+    nxtDisplayStringAt(30, 40, "%1.2f",localTemp[6]);
+    nxtDisplayStringAt(30, 30, "%1.2f",localTemp[7]);
+
+    //right
+    nxtDisplayStringAt(60, 60, "%1.2f",localTemp[8]);
+    nxtDisplayStringAt(60, 50, "%1.2f",localTemp[9]);
+    nxtDisplayStringAt(60, 40, "%1.2f",localTemp[10]);
+    nxtDisplayStringAt(60, 30, "%1.2f",localTemp[11]);
+
+    //TEXT
+    nxtDisplayStringAt(88, 60, "N1");
+    nxtDisplayStringAt(88, 50, "N2");
+    nxtDisplayStringAt(88, 40, "N3");
+    nxtDisplayStringAt(88, 30, "N4");
+    nxtDisplayStringAt(13, 10, "L");
+    nxtDisplayStringAt(40, 10, "C");
+    nxtDisplayStringAt(69, 10, "R");
+    wait1Msec(1000);
+    //eraseDisplay();
+
+    //nxtDisplayCenteredTextLine(1,"Normalised");
+    //wait1Msec(100);
+    //eraseDisplay();
+
+    normaliseTemp();
+    nxtDisplayStringAt(0, 60, "%1.2f",localTemp[0]);
+    nxtDisplayStringAt(0, 50, "%1.2f",localTemp[1]);
+    nxtDisplayStringAt(0, 40, "%1.2f",localTemp[2]);
+    nxtDisplayStringAt(0, 30, "%1.2f",localTemp[3]);
+
+    //centre
+    nxtDisplayStringAt(30, 60, "%1.2f",localTemp[4]);
+    nxtDisplayStringAt(30, 50, "%1.2f",localTemp[5]);
+    nxtDisplayStringAt(30, 40, "%1.2f",localTemp[6]);
+    nxtDisplayStringAt(30, 30, "%1.2f",localTemp[7]);
+
+    //right
+    nxtDisplayStringAt(60, 60, "%1.2f",localTemp[8]);
+    nxtDisplayStringAt(60, 50, "%1.2f",localTemp[9]);
+    nxtDisplayStringAt(60, 40, "%1.2f",localTemp[10]);
+    nxtDisplayStringAt(60, 30, "%1.2f",localTemp[11]);
+
+    //TEXT
+    nxtDisplayStringAt(88, 60, "N1");
+    nxtDisplayStringAt(88, 50, "N2");
+    nxtDisplayStringAt(88, 40, "N3");
+    nxtDisplayStringAt(88, 30, "N4");
+    nxtDisplayStringAt(13, 10, "L");
+    nxtDisplayStringAt(40, 10, "C");
+    nxtDisplayStringAt(69, 10, "R");
+
+    wait1Msec(3000);
+    eraseDisplay();
+*/
