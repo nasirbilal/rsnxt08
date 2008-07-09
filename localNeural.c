@@ -50,10 +50,13 @@ const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!
 ///////////////////////////
 float localTemp[numNeuralUnits]; //holds the temporary neural value
 float localComparison[numNeuralUnits]; //what the local cell data is loaded into
-int rightSonarValue; //obvious
-int leftSonarValue;
-int centreSonarValue;
+float rightSonarValue = 0; //obvious
+float leftSonarValue = 0;
+float centreSonarValue = 0;
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
+float tempCalcC = 0;
+float tempCalcL = 0;
+float tempCalcR = 0;
 
 ///////////////////////////
 //                       //
@@ -63,13 +66,8 @@ char nextEmptyCell = 0; //used for holding the next empty cell in the localcell 
 
 void clearTemp()
 {
-	//clears the temp file
-	char x;
-  for (x = 0; x<numNeuralUnits; x++)
-  {
-    localTemp[x] = 0;
-    localComparison[x] = 0;
-  }
+  memset(localTemp, 0, 48);
+  memset(localComparison, 0, 48);
 }
 
 /*
@@ -81,16 +79,17 @@ void setRight()
 {
 	//This function allocates a proportion to each neural unit based on the value returned by the sonar sensor
 	rightSonarValue = SensorValue(rightSonar);
-	float tempCalcR = 0;
+	tempCalcR = 0;
 	if(rightSonarValue <= firstUnit)
 	{
-    localTemp[8] = (float) (1 - (firstUnit - rightSonarValue)/firstUnit);
+		tempCalcR = (float) (((firstUnit - rightSonarValue)/firstUnit));
+    localTemp[8] = (float) 1 - tempCalcR;
 	}
   else if(rightSonarValue > firstUnit && rightSonarValue <= secondUnit)
   {
   	tempCalcR = (float) (secondUnit - rightSonarValue)/(secondUnit - firstUnit);
     localTemp[8] = tempCalcR;
-  	localTemp[9] = 1- tempCalcR;
+  	localTemp[9] = 1 - tempCalcR;
   }
   else if(rightSonarValue > secondUnit && rightSonarValue <= thirdUnit)
   {
@@ -114,16 +113,17 @@ void setCentre()
 {
 	//This function allocates a proportion to each neural unit based on the value returned by the sonar sensor
 	centreSonarValue = SensorValue(centreSonar);
-	float tempCalcC = 0;
+	tempCalcC = 0;
 	if(centreSonarValue <= firstUnit)
 	{
-    localTemp[4] = (float) (1 - (firstUnit - centreSonarValue)/firstUnit);
+		tempCalcC = (float) ((firstUnit - centreSonarValue)/firstUnit);
+    localTemp[4] = (float) 1 - tempCalcC;
 	}
   else if(centreSonarValue > firstUnit && centreSonarValue <= secondUnit)
   {
   	tempCalcC = (float) (secondUnit - centreSonarValue)/(secondUnit - firstUnit);
     localTemp[4] = tempCalcC;
-  	localTemp[5] = 1- tempCalcC;
+  	localTemp[5] = 1 - tempCalcC;
   }
   else if(centreSonarValue > secondUnit && centreSonarValue <= thirdUnit)
   {
@@ -146,16 +146,17 @@ void setCentre()
 void setLeft()
 {
 	leftSonarValue = SensorValue(leftSonar);
-	float tempCalcL = 0;
+	tempCalcL = 0;
 	if(leftSonarValue <= firstUnit)
 	{
-    localTemp[0] = (float) (1 - (firstUnit - leftSonarValue)/firstUnit);
+		tempCalcL = (float) ((firstUnit - leftSonarValue)/firstUnit);
+    localTemp[0] = (float) 1 - tempCalcL;
 	}
   else if(leftSonarValue > firstUnit && leftSonarValue <= secondUnit)
   {
   	tempCalcL = (float) (secondUnit - leftSonarValue)/(secondUnit - firstUnit);
     localTemp[0] = tempCalcL;
-  	localTemp[1] = 1- tempCalcL;
+  	localTemp[1] = 1 - tempCalcL;
   }
   else if(leftSonarValue > secondUnit && leftSonarValue <= thirdUnit)
   {
@@ -290,7 +291,7 @@ void checkLocalCell()
       eraseDisplay();
     }
 
-    else if(match = 1)
+    else if(match == 1)
     {
       eraseDisplay();
       nxtDisplayCenteredTextLine(3, "Match");
@@ -308,6 +309,7 @@ task main ()
   {
     setTemp();
     checkLocalCell();
+
 
   }
 

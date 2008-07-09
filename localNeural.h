@@ -28,11 +28,10 @@
 //      Variables        //
 //                       //
 ///////////////////////////
-char firstUnit = 15;
-char secondUnit = 45;
-char thirdUnit = 75;
-char fourthUnit = 105;
-char fifthUnit = 135;
+char firstUnit = 15; //15
+char secondUnit = 45; //45
+char thirdUnit = 75; //75
+char fourthUnit = 105; //105
 const char numLocalCells = 20;
 const char numNeuralUnits = 12;
 
