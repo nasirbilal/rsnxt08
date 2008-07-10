@@ -1,11 +1,15 @@
 //*!!Sensor,    S1,            leftSonar, sensorSONAR,      ,                    !!*//
 //*!!Sensor,    S2,          centreSonar, sensorSONAR,      ,                    !!*//
 //*!!Sensor,    S3,           rightSonar, sensorSONAR,      ,                    !!*//
+//*!!Motor,  motorB,            leftMotor, tmotorNxtEncoderClosedLoop,           !!*//
+//*!!Motor,  motorC,           rightMotor, tmotorNxtEncoderClosedLoop,           !!*//
 //*!!                                                                            !!*//
 //*!!Start automatically generated configuration code.                           !!*//
 const tSensors leftSonar            = (tSensors) S1;   //sensorSONAR        //*!!!!*//
 const tSensors centreSonar          = (tSensors) S2;   //sensorSONAR        //*!!!!*//
 const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!!!!*//
+const tMotor   leftMotor            = (tMotor) motorB; //tmotorNxtEncoderClosedLoop //*!!!!*//
+const tMotor   rightMotor           = (tMotor) motorC; //tmotorNxtEncoderClosedLoop //*!!!!*//
 //*!!CLICK to edit 'wizard' created sensor & motor configuration.                !!*//
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +253,7 @@ void checkLocalCell()
     nextEmptyCell++;
     eraseDisplay();
     nxtDisplayCenteredTextLine(3, "New Cell Created");
-    wait1Msec(2000);
+    wait1Msec(800);
     eraseDisplay();
 	}
   else {
@@ -271,8 +275,8 @@ void checkLocalCell()
       dotTempValue = dotMultiply();
       tempAngle = acos(dotTempValue);
       eraseDisplay();
-      nxtDisplayString(5, "%3.3f", tempAngle);
-      wait1Msec(1000);
+      //nxtDisplayString(5, "%3.3f", tempAngle);
+      //wait1Msec(1000);
       if(tempAngle<0.30)
       {
         //a match - need to check
@@ -287,7 +291,7 @@ void checkLocalCell()
     	eraseDisplay();
       nxtDisplayCenteredTextLine(3, "No Match");
       nxtDisplayCenteredTextLine(4, "New Cell Created");
-      wait1Msec(1000);
+      wait1Msec(800);
       eraseDisplay();
     }
 
@@ -295,22 +299,93 @@ void checkLocalCell()
     {
       eraseDisplay();
       nxtDisplayCenteredTextLine(3, "Match");
-      wait1Msec(1000);
+      wait1Msec(800);
       eraseDisplay();
-
     }
 
   }
 }
 
-task main ()
+void doTurn()
 {
-  while(1)
-  {
-    setTemp();
-    checkLocalCell();
+//part of the testing reigme of the local cells
+	if(centreSonarValue<15)
+	{
+	  if(leftSonarValue > 15 && rightSonarValue < 15)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = 50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	  }
+		else if(leftSonarValue < 15 && rightSonarValue > 15)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	  }
+		else if(leftSonarValue < 15 && rightSonarValue < 15)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 370;
+	    motor[motorB] = 50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	  }
+	  else
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	  	nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = 50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
 
-
+	  }
   }
 
+
+}
+
+task main ()
+{
+	while(nextEmptyCell<20)
+	{
+		char lastCellNum = nextEmptyCell;
+	  nSyncedMotors = synchBC;
+	  nSyncedTurnRatio = 95;
+    nMotorEncoderTarget[motorB] = 200;
+	  motor[motorB] = 70;
+    while(nMotorRunState[motorB] != runStateIdle) {}
+    setTemp();
+    checkLocalCell();
+    doTurn();
+    if(lastCellNum != nextEmptyCell)
+    {
+      AddToDatalog(1);
+    }
+    else
+    {
+    	AddToDatalog(0);
+    }
+ // wait1Msec(200);
+
+  }
+  SaveNxtDatalog();
+  PlaySoundFile("! attention.rso");
+  while(bSoundActive) {}
 }
