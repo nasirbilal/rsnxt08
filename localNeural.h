@@ -32,8 +32,10 @@ char firstUnit = 15; //15
 char secondUnit = 45; //45
 char thirdUnit = 75; //75
 char fourthUnit = 105; //105
-const char numLocalCells = 20;
-const char numNeuralUnits = 12;
+char fifthUnit = 135;
+char sixthUnit = 195;
+const char numLocalCells = 40;
+const char numNeuralUnits = 18;
 
 ///////////////////////////
 //                       //
