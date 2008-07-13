@@ -70,8 +70,8 @@ float tempCalcR = 0;
 
 void clearTemp()
 {
-  memset(localTemp, 0, 48);
-  memset(localComparison, 0, 48);
+  memset(localTemp, 0, 4*numNeuralUnits);
+  memset(localComparison, 0, 4*numNeuralUnits);
 }
 
 /*
@@ -87,29 +87,41 @@ void setRight()
 	if(rightSonarValue <= firstUnit)
 	{
 		tempCalcR = (float) (((firstUnit - rightSonarValue)/firstUnit));
-    localTemp[8] = (float) 1 - tempCalcR;
+    localTemp[12] = (float) 1 - tempCalcR;
 	}
   else if(rightSonarValue > firstUnit && rightSonarValue <= secondUnit)
   {
   	tempCalcR = (float) (secondUnit - rightSonarValue)/(secondUnit - firstUnit);
-    localTemp[8] = tempCalcR;
-  	localTemp[9] = 1 - tempCalcR;
+    localTemp[12] = tempCalcR;
+  	localTemp[13] = 1 - tempCalcR;
   }
   else if(rightSonarValue > secondUnit && rightSonarValue <= thirdUnit)
   {
   	tempCalcR = (float) (thirdUnit - rightSonarValue)/(thirdUnit - secondUnit);
-    localTemp[9] = tempCalcR;
-  	localTemp[10] = 1 - tempCalcR;
+    localTemp[13] = tempCalcR;
+  	localTemp[14] = 1 - tempCalcR;
   }
   else if(rightSonarValue > thirdUnit && rightSonarValue <= fourthUnit)
   {
   	tempCalcR = (float) (fourthUnit - rightSonarValue)/(fourthUnit - thirdUnit);
-    localTemp[10] = tempCalcR;
-  	localTemp[11] = 1 - tempCalcR;
+    localTemp[14] = tempCalcR;
+  	localTemp[15] = 1 - tempCalcR;
   }
-  else if(rightSonarValue > fourthUnit)
+  else if(rightSonarValue > fourthUnit && rightSonarValue <= fifthUnit)
   {
-    localTemp[11] = 1;
+  	tempCalcR = (float) (fifthUnit - rightSonarValue)/(fifthUnit - fourthUnit);
+    localTemp[15] = tempCalcR;
+  	localTemp[16] = 1 - tempCalcR;
+  }
+  else if(rightSonarValue > fifthUnit && rightSonarValue <= sixthUnit)
+  {
+  	tempCalcR = (float) (sixthUnit - rightSonarValue)/(sixthUnit - fifthUnit);
+    localTemp[16] = tempCalcR;
+  	localTemp[17] = 1 - tempCalcR;
+  }
+  else if(rightSonarValue > sixthUnit)
+  {
+    localTemp[17] = 1;
   }
 }
 
@@ -120,40 +132,53 @@ void setCentre()
 	tempCalcC = 0;
 	if(centreSonarValue <= firstUnit)
 	{
-		tempCalcC = (float) ((firstUnit - centreSonarValue)/firstUnit);
-    localTemp[4] = (float) 1 - tempCalcC;
+		tempCalcC = (float) (((firstUnit - centreSonarValue)/firstUnit));
+    localTemp[6] = (float) 1 - tempCalcC;
 	}
   else if(centreSonarValue > firstUnit && centreSonarValue <= secondUnit)
   {
   	tempCalcC = (float) (secondUnit - centreSonarValue)/(secondUnit - firstUnit);
-    localTemp[4] = tempCalcC;
-  	localTemp[5] = 1 - tempCalcC;
+    localTemp[6] = tempCalcC;
+  	localTemp[7] = 1 - tempCalcC;
   }
   else if(centreSonarValue > secondUnit && centreSonarValue <= thirdUnit)
   {
   	tempCalcC = (float) (thirdUnit - centreSonarValue)/(thirdUnit - secondUnit);
-    localTemp[5] = tempCalcC;
-  	localTemp[6] = 1 - tempCalcC;
+    localTemp[7] = tempCalcC;
+  	localTemp[8] = 1 - tempCalcC;
   }
   else if(centreSonarValue > thirdUnit && centreSonarValue <= fourthUnit)
   {
   	tempCalcC = (float) (fourthUnit - centreSonarValue)/(fourthUnit - thirdUnit);
-    localTemp[6] = tempCalcC;
-  	localTemp[7] = 1 - tempCalcC;
+    localTemp[8] = tempCalcC;
+  	localTemp[9] = 1 - tempCalcC;
   }
-  else if(centreSonarValue > fourthUnit)
+  else if(centreSonarValue > fourthUnit && centreSonarValue <= fifthUnit)
   {
-    localTemp[7] = 1;
+  	tempCalcC = (float) (fifthUnit - centreSonarValue)/(fifthUnit - fourthUnit);
+    localTemp[9] = tempCalcC;
+  	localTemp[10] = 1 - tempCalcC;
+  }
+  else if(centreSonarValue > fifthUnit && centreSonarValue <= sixthUnit)
+  {
+  	tempCalcC = (float) (sixthUnit - centreSonarValue)/(sixthUnit - fifthUnit);
+    localTemp[10] = tempCalcC;
+  	localTemp[11] = 1 - tempCalcC;
+  }
+  else if(centreSonarValue > sixthUnit)
+  {
+    localTemp[11] = 1;
   }
 }
 
 void setLeft()
 {
+	//This function allocates a proportion to each neural unit based on the value returned by the sonar sensor
 	leftSonarValue = SensorValue(leftSonar);
 	tempCalcL = 0;
 	if(leftSonarValue <= firstUnit)
 	{
-		tempCalcL = (float) ((firstUnit - leftSonarValue)/firstUnit);
+		tempCalcL = (float) (((firstUnit - leftSonarValue)/firstUnit));
     localTemp[0] = (float) 1 - tempCalcL;
 	}
   else if(leftSonarValue > firstUnit && leftSonarValue <= secondUnit)
@@ -174,9 +199,21 @@ void setLeft()
     localTemp[2] = tempCalcL;
   	localTemp[3] = 1 - tempCalcL;
   }
-  else if(leftSonarValue > fourthUnit)
+  else if(leftSonarValue > fourthUnit && leftSonarValue <= fifthUnit)
   {
-    localTemp[3] = 1;
+  	tempCalcL = (float) (fifthUnit - leftSonarValue)/(fifthUnit - fourthUnit);
+    localTemp[3] = tempCalcL;
+  	localTemp[4] = 1 - tempCalcL;
+  }
+  else if(leftSonarValue > fifthUnit && leftSonarValue <= sixthUnit)
+  {
+  	tempCalcL = (float) (sixthUnit - leftSonarValue)/(sixthUnit - fifthUnit);
+    localTemp[4] = tempCalcL;
+  	localTemp[5] = 1 - tempCalcL;
+  }
+  else if(leftSonarValue > sixthUnit)
+  {
+    localTemp[5] = 1;
   }
 }
 
@@ -239,6 +276,57 @@ void setTemp()
 	normaliseTemp();
 }
 
+void StarWars()
+{
+  //        180 = Tempo
+  //          5 = Default octave
+  //    Quarter = Default note length
+  //        10% = Break between notes
+  //
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  932,   90); wait1Msec(1000);  // Note(A#, Duration(Half .))
+  PlayTone( 1047,   90); wait1Msec(1000);  // Note(F6, Duration(Half .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
+  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
+  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
+  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
+  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  784,   60); wait1Msec( 667);  // Note(C6, Duration(Half))
+  PlayTone(    0,   30); wait1Msec( 333);  // Note(Rest)
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
+  PlayTone(  932,   90); wait1Msec(1000);  // Note(A#, Duration(Half .))
+  PlayTone( 1047,   90); wait1Msec(1000);  // Note(F6, Duration(Half .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
+  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
+  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
+  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
+  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
+  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
+  PlayTone(  784,   60); wait1Msec( 667);  // Note(C6, Duration(Half))
+  return;
+}
+
+
+
 void checkLocalCell()
 {
 	//uses a normalised version of the localTemp.  The comparison local cells are stored as normalised when 1st created
@@ -251,10 +339,12 @@ void checkLocalCell()
 	  //first localCellView
 		fillStructArray(nextEmptyCell);
     nextEmptyCell++;
-    eraseDisplay();
-    nxtDisplayCenteredTextLine(3, "New Cell Created");
-    wait1Msec(800);
-    eraseDisplay();
+    //eraseDisplay();
+    //nxtDisplayCenteredTextLine(3, "New Cell Created");
+    //wait1Msec(1000);
+    //eraseDisplay();
+    PlaySoundFile("! Attention.rso");
+    while(bSoundActive) {}
 	}
   else {
     for(z = 0; z<nextEmptyCell; z++)
@@ -274,10 +364,10 @@ void checkLocalCell()
   	  localComparison[11] = localCellStruct[z].localCellTemp[11];
       dotTempValue = dotMultiply();
       tempAngle = acos(dotTempValue);
-      eraseDisplay();
+      //eraseDisplay();
       //nxtDisplayString(5, "%3.3f", tempAngle);
       //wait1Msec(1000);
-      if(tempAngle<0.30)
+      if(tempAngle<0.89)
       {
         //a match - need to check
       	match = 1;
@@ -288,19 +378,23 @@ void checkLocalCell()
     {//no match found - create a new local view cell
     	fillStructArray(nextEmptyCell);
     	nextEmptyCell++;
-    	eraseDisplay();
-      nxtDisplayCenteredTextLine(3, "No Match");
-      nxtDisplayCenteredTextLine(4, "New Cell Created");
-      wait1Msec(800);
-      eraseDisplay();
+    //	eraseDisplay();
+     // nxtDisplayCenteredTextLine(3, "No Match");
+    //  nxtDisplayCenteredTextLine(4, "New Cell Created");
+     // wait1Msec(1000);
+    //  eraseDisplay();
+      PlaySoundFile("! Attention.rso");
+      while(bSoundActive) {}
     }
 
     else if(match == 1)
     {
-      eraseDisplay();
-      nxtDisplayCenteredTextLine(3, "Match");
-      wait1Msec(800);
-      eraseDisplay();
+     // eraseDisplay();
+     // nxtDisplayCenteredTextLine(3, "Match");
+     // wait1Msec(1000);
+     // eraseDisplay();
+      PlaySoundFile("Woops.rso");
+      while(bSoundActive) {}
     }
 
   }
@@ -309,9 +403,9 @@ void checkLocalCell()
 void doTurn()
 {
 //part of the testing reigme of the local cells
-	if(centreSonarValue<15)
+	if(centreSonarValue<19)
 	{
-	  if(leftSonarValue > 15 && rightSonarValue < 15)
+	  if(leftSonarValue > 19 && rightSonarValue < 19)
 	  {
 	  	nSyncedTurnRatio = 100;
 	  	nMotorEncoderTarget[motorB] = 190;
@@ -322,7 +416,7 @@ void doTurn()
 	    motor[motorB] = 50;
 	    while(nMotorRunState[motorB] != runStateIdle) {}
 	  }
-		else if(leftSonarValue < 15 && rightSonarValue > 15)
+		else if(leftSonarValue < 19 && rightSonarValue > 19)
 	  {
 	  	nSyncedTurnRatio = 100;
 	  	nMotorEncoderTarget[motorB] = 190;
@@ -333,7 +427,7 @@ void doTurn()
 	    motor[motorB] = -50;
 	    while(nMotorRunState[motorB] != runStateIdle) {}
 	  }
-		else if(leftSonarValue < 15 && rightSonarValue < 15)
+		else if(leftSonarValue < 19 && rightSonarValue < 19)
 	  {
 	  	nSyncedTurnRatio = 100;
 	  	nMotorEncoderTarget[motorB] = 190;
@@ -363,13 +457,16 @@ void doTurn()
 
 task main ()
 {
-	while(nextEmptyCell<20)
+	nxtDisplayCenteredTextLine(3, "Roaming");
+	nxtDisplayCenteredTextLine(5, "This is a test");
+	while(nextEmptyCell<numLocalCells)
 	{
+		alive();
 		char lastCellNum = nextEmptyCell;
 	  nSyncedMotors = synchBC;
-	  nSyncedTurnRatio = 95;
+	  nSyncedTurnRatio = 101;
     nMotorEncoderTarget[motorB] = 200;
-	  motor[motorB] = 70;
+	  motor[motorB] =60;
     while(nMotorRunState[motorB] != runStateIdle) {}
     setTemp();
     checkLocalCell();
@@ -386,6 +483,5 @@ task main ()
 
   }
   SaveNxtDatalog();
-  PlaySoundFile("! attention.rso");
-  while(bSoundActive) {}
+  StarWars();
 }
