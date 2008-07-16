@@ -1,3 +1,17 @@
+//*!!Sensor,    S1,            leftSonar, sensorSONAR,      ,                    !!*//
+//*!!Sensor,    S2,          centreSonar, sensorSONAR,      ,                    !!*//
+//*!!Sensor,    S3,           rightSonar, sensorSONAR,      ,                    !!*//
+//*!!Motor,  motorB,            leftMotor, tmotorNxtEncoderClosedLoop,           !!*//
+//*!!Motor,  motorC,           rightMotor, tmotorNxtEncoderClosedLoop,           !!*//
+//*!!                                                                            !!*//
+//*!!Start automatically generated configuration code.                           !!*//
+const tSensors leftSonar            = (tSensors) S1;   //sensorSONAR        //*!!!!*//
+const tSensors centreSonar          = (tSensors) S2;   //sensorSONAR        //*!!!!*//
+const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!!!!*//
+const tMotor   leftMotor            = (tMotor) motorB; //tmotorNxtEncoderClosedLoop //*!!!!*//
+const tMotor   rightMotor           = (tMotor) motorC; //tmotorNxtEncoderClosedLoop //*!!!!*//
+//*!!CLICK to edit 'wizard' created sensor & motor configuration.                !!*//
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //      Title:- Pose Cells
@@ -39,6 +53,11 @@
 
 #include "PoseCell3D.h"
 int numActive = 0;
+char currentDirection = 0;
+int currentTheta = 0;
+int centreSonarValue = 0;
+int leftSonarValue = 0;
+int rightSonarValue = 0;
 /////////////////////////////
 //                         //
 // Excitatory Matrix stuff //
@@ -406,7 +425,7 @@ void doExcitation()
 //                       //
 ///////////////////////////
 
-void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char translationX, char translationY)
+void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char translationX, char translationY, char translationTheta)
 {
   //loop
   char relativeX;
@@ -423,7 +442,7 @@ void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char transla
   position.y = yP;
   position.theta = thetaP;
   position.ACTIVE = ACTIVEP;
-  getActivationDistribution(translationX, translationY, 0);
+  getActivationDistribution(translationX, translationY, translationTheta);
   for(relativeX = 0; relativeX < 2; relativeX++)
   {
     x = getWrappedX(position.x + relativeX + translationX);
@@ -515,7 +534,7 @@ void initialisePose()
 //                                  //
 //////////////////////////////////////
 
-void pose3D(char translationX, char translationY)
+void pose3D(char translationX, char translationY, char translationTheta)
 {
   //loop
   char i;
@@ -540,7 +559,7 @@ void pose3D(char translationX, char translationY)
         position.ACTIVE = poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE;
         if(position.ACTIVE)
         {
-          pathIntegrateCell(position.x, position.y, position.theta, position.ACTIVE, translationX, translationY);
+          pathIntegrateCell(position.x, position.y, position.theta, position.ACTIVE, translationX, translationY, translationTheta);
         }
       }
     }
@@ -552,7 +571,7 @@ void pose3D(char translationX, char translationY)
   findMaximum();
 }
 
-
+/*
 //////////////////////////////
 //                          //
 //   Visualise pose stuff   //
@@ -575,6 +594,139 @@ void displayMaxPoseCell()
   nxtDisplayString(3, "Num Act. = %d", numActive);
   nxtFillRect(left, top + 6, left + 10, top);
 }
+*/
+void handleDirection(char turn)
+{
+	switch (turn)
+	{
+	  case 'l':
+	    if(currentDirection == 0)
+	    {
+	      currentDirection = 1;
+	    	currentTheta = 90;
+	    }
+		  else if(currentDirection == 1)
+		  {
+		    currentDirection = 2;
+		  	currentTheta = 180;
+		  }
+		  else if(currentDirection == 2)
+		  {
+		  	currentDirection = 3;
+		  	currentTheta = 270;
+		  }
+		  else if(currentDirection == 3)
+		  {
+		  	currentDirection = 0;
+		  	currentTheta = 0;
+		  }
+		  break;
+		 case 'r':
+	    if(currentDirection == 0)
+	    {
+	      currentDirection = 3;
+	    	currentTheta = 270;
+	    }
+		  else if(currentDirection == 1)
+		  {
+		    currentDirection = 0;
+		  	currentTheta = 0;
+		  }
+		  else if(currentDirection == 2)
+		  {
+		  	currentDirection = 1;
+		  	currentTheta = 90;
+		  }
+		  else if(currentDirection == 3)
+		  {
+		  	currentDirection = 2;
+		  	currentTheta = 180;
+		  }
+		  break;
+		  case 'b':
+	    if(currentDirection == 0)
+	    {
+	      currentDirection = 2;
+	    	currentTheta = 180;
+	    }
+		  else if(currentDirection == 1)
+		  {
+		    currentDirection = 3;
+		  	currentTheta = 270;
+		  }
+		  else if(currentDirection == 2)
+		  {
+		  	currentDirection = 0;
+		  	currentTheta = 0;
+		  }
+		  else if(currentDirection == 3)
+		  {
+		  	currentDirection = 1;
+		  	currentTheta = 90;
+		  }
+		  break;
+		 default: break;
+	}
+}
+
+void doTurn()
+{
+//part of the testing reigme of the local cells
+	//decided that anticlockwise is positive
+	if(centreSonarValue<19)
+	{
+	  if(leftSonarValue > 19 && rightSonarValue < 19)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    handleDirection('l');
+	  }
+		else if(leftSonarValue < 19 && rightSonarValue > 19)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = 50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    handleDirection('r');
+	  }
+		else if(leftSonarValue < 19 && rightSonarValue < 19)
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	    nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 370;
+	    motor[motorB] = 50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+      handleDirection('b');
+	   }
+	  else
+	  {
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+	  	nSyncedTurnRatio = -100;
+	  	nMotorEncoderTarget[motorB] = 190;
+	    motor[motorB] = -50;
+	    while(nMotorRunState[motorB] != runStateIdle) {}
+      handleDirection('l');
+	  }
+  }
+
+
+}
 
 //////////////
 //          //
@@ -585,30 +737,94 @@ void displayMaxPoseCell()
 task main()
 {
   //button stuff for path integration
-  nNxtButtonTask  = -2;
-  nNxtExitClicks = 5;
-  TButtons nBtn;
+  //nNxtButtonTask  = -2;
+  //nNxtExitClicks = 5;
+  //TButtons nBtn;
 
   initialisePose();
+  pose3D(0, 0, 0);
+  currentDirection = 0;
+  currentTheta = 0;
+
   eraseDisplay();
-  nxtDisplayCenteredTextLine(2, "3D Pose Cells");
-  wait10Msec(100);
-  displayMaxPoseCell();
+  position.y = poseEnvironment.maxActivatedCell.y;
+	position.x = poseEnvironment.maxActivatedCell.x;
+  position.theta = poseEnvironment.maxActivatedCell.theta;
+  char top = position.y;
+  char left = position.x;
+  char angle = position.theta;
+  float maxActivation = poseEnvironment.poseActivity[left].array2D[top][angle];
+  nxtDisplayStringAt(0, 60, "%d", top);
+  nxtDisplayStringAt(8, 60, "%d", left);
+  nxtDisplayStringAt(16, 60, "%d", angle);
+  //nxtDisplayString(1, "%d, %d", top, left);
+  nxtDisplayString(2, "Act = %4.3f", maxActivation);
+  nxtDisplayString(3, "Num Act. = %d", numActive);
+  wait10Msec(200);
+
+  //eraseDisplay();
+  //nxtDisplayCenteredTextLine(2, "3D Pose Cells");
+  //wait10Msec(100);
+  //displayMaxPoseCell();
   while(true)
   {
+    /*
+    ' program so that when it moves the first direction will be Y.  If the robot turns the direction will change and
+    ' the theta will be recorded (will be 90 degrees) at certain theta will be -x or -y
+    */
 
-    if((nBtn = nNxtButtonPressed) > -1)
+    //get sonar values
+    leftSonarValue = SensorValue[leftSonar];
+    centreSonarValue = SensorValue[centreSonar];
+    rightSonarValue = SensorValue[rightSonar];
+
+    //drive
+  	nSyncedMotors = synchBC;
+	  nSyncedTurnRatio = 100;
+    nMotorEncoderTarget[motorB] = 360;
+	  motor[motorB] =50;
+    while(nMotorRunState[motorB] != runStateIdle) {}
+
+    //pose stuff
+    char convertTheta = (char) currentTheta/360 * 6;
+    if(currentDirection == 0)
     {
-      switch(nBtn)
-      {
-        case kLeftButton: {pose3D(-1,0); displayMaxPoseCell();} break;
-        case kRightButton: {pose3D(1,0); displayMaxPoseCell();} break;
-        case kEnterButton: {pose3D(0,1); displayMaxPoseCell();} break;
-        case kExitButton: {pose3D(0,-1); displayMaxPoseCell();} break;
-        default: break;
-      }
-
+      pose3D(1, 0, 0);
     }
+    else if(currentDirection == 1)
+    {
+    	pose3D(0, 1, convertTheta);
+    }
+    else if(currentDirection == 2)
+    {
+    	pose3D(-1, 0, convertTheta);
+    }
+    else if(currentDirection ==3)
+    {
+    	pose3D(0, -1, convertTheta);
+    }
+    eraseDisplay();
+    position.y = poseEnvironment.maxActivatedCell.y;
+	  position.x = poseEnvironment.maxActivatedCell.x;
+	  position.theta = poseEnvironment.maxActivatedCell.theta;
+	  char top = position.y;
+	  char left = position.x;
+	  char angle = position.theta;
+	  float maxActivation = poseEnvironment.poseActivity[left].array2D[top][angle];
+	  nxtDisplayStringAt(0, 60, "%d", top);
+	  nxtDisplayStringAt(8, 60, "%d", left);
+	  nxtDisplayStringAt(16, 60, "%d", angle);
+	  //nxtDisplayString(1, "%d, %d", top, left);
+	  nxtDisplayString(2, "Act = %4.3f", maxActivation);
+	  nxtDisplayString(3, "Num Act. = %d", numActive);
+    wait10Msec(200);
+    //if need to turn, turn
+    doTurn();
+    eraseDisplay();
+    nxtDisplayCenteredTextLine(1, "%3d", currentDirection);
+    nxtDisplayCenteredTextLine(2, "%3d", currentTheta);
+    wait10Msec(200);
+  //displayMaxPoseCell();
   }
 
 }
