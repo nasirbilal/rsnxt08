@@ -29,14 +29,13 @@ const tMotor   rightMotor           = (tMotor) motorC; //tmotorNxtEncoderClosedL
 //   -continue testing if cells match
 //   -determine memory load of using float, possibly use float for calcs then multiply by say 10 or 100
 //    and store as char or int to save memory
-//   -whether to use acos() or just use the dot multiply value for comparison.
 //   -size of local cell struct
 //   -linking with pose cells
 //   "dotMuliply function works as advertised and normalises the neural data.
-//   *<0.3 is a match (radians)
+//   *<0.85 is a match (radians)
 //   "Reading and comparing local cells works - just need to tweak the angle value
 //   *Now equations will not doing anything when a value of an array = 0 - thus speeding up system
-//   *now testing with four units with greater difference between them range ~0-200 cm
+//   *now testing with sixth units with greater difference between them range ~0-195 cm
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////
@@ -73,11 +72,6 @@ void clearTemp()
   memset(localTemp, 0, 4*numNeuralUnits);
   memset(localComparison, 0, 4*numNeuralUnits);
 }
-
-/*
-' change to five neural units and change distance between them.
-'
-*/
 
 void setRight()
 {
@@ -225,7 +219,6 @@ void fillStructArray(char cellNum)
 	for(k=0; k<numNeuralUnits; k++)
 	{
 	  localCellStruct[cellNum].localCellTemp[k] = localTemp[k];
-
 	}
 }
 

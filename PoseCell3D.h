@@ -88,7 +88,7 @@ char getWrappedY(char indexY);
 char getWrappedTheta(char indexTheta);
 void setupPoseStructure();
 void initialisePose();
-void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char translationX, char translationY);
+void pathIntegrateCell(char xP, char yP, char thetaP, char ACTIVEP, char translationX, char translationY, char translationTheta);
 void getActivationDistribution(char offsetX, char offsetY, char offsetTheta);
 matrixExcite excitation_Weights[3];
 PoseCellStructure poseEnvironment;
