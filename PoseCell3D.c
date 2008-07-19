@@ -178,6 +178,7 @@ char getWrappedTheta(char indexTheta)
 
 void checkActive()
 {
+	//saturation
   char i;
   char j;
   char k;
@@ -187,11 +188,11 @@ void checkActive()
     {
       for(k = 0; k < sizeTheta; k++)
       {
-        if(poseEnvironment.poseActivity[i].array2D[j][k] > 0.05)
+        if(poseEnvironment.poseActivity[i].array2D[j][k] >= 0.15)
         {
           poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE = 1;
         }
-        else if(poseEnvironment.poseActivity[i].array2D[j][k] < 0.05)
+        else if(poseEnvironment.poseActivity[i].array2D[j][k] < 0.15)
         {
           poseEnvironment.positionReferences[i].array2D[j][k].ACTIVE = 0;
           poseEnvironment.poseActivity[i].array2D[j][k] = 0;
@@ -508,19 +509,17 @@ void getActivationDistribution(char offsetX, char offsetY, char offsetTheta)
 
 void initialisePose()
 {
-  char startX = sizeX/2;
-  char startY = sizeY/2;
   excitationMatrixSetup();
   setupPoseStructure();
-  position.x = startX;
-  position.y = startY;
+  position.x = 0;
+  position.y = 0;
   position.theta = 0;
   position.ACTIVE = 1;
-  poseEnvironment.positionReferences[startX].array2D[startY][0].x = position.x;
-  poseEnvironment.positionReferences[startX].array2D[startY][0].y = position.y;
-  poseEnvironment.positionReferences[startX].array2D[startY][0].theta = position.theta;
-  poseEnvironment.positionReferences[startX].array2D[startY][0].ACTIVE = position.ACTIVE;
-  poseEnvironment.poseActivity[startX].array2D[startY][0] = startActivation;
+  poseEnvironment.positionReferences[0].array2D[0][0].x = position.x;
+  poseEnvironment.positionReferences[0].array2D[0][0].y = position.y;
+  poseEnvironment.positionReferences[0].array2D[0][0].theta = position.theta;
+  poseEnvironment.positionReferences[0].array2D[0][0].ACTIVE = position.ACTIVE;
+  poseEnvironment.poseActivity[0].array2D[0][0] = startActivation;
   poseEnvironment.maxActivatedCell.x = position.x;
   poseEnvironment.maxActivatedCell.y = position.y;
   poseEnvironment.maxActivatedCell.theta = position.theta;
