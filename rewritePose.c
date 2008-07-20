@@ -1,6 +1,6 @@
 /////BIG POSE CELL REWRITE !!!!
 
-///not using any header files straight - this will be as messy as all fuck
+///not using any header files straight code in one file - this will be as messy as all fuck
 
 /*
 | improvements so far have been a significant reduction in memory and computation load due to not having an 3d
@@ -12,7 +12,7 @@
 //variables used for pose cells
 const char sizeX = 10; //number of cells in X dimension
 const char sizeY = 10; //number of cells in Y dimension
-const char sizeTheta = 10; //number of cells in theta dimension
+const char sizeTheta = 6; //number of cells in theta dimension
 const char lengthX = 5; //length (x) represented by pose
 const char lengthY = 5; //length (y) represented by pose
 //note theta thought to represent 360 degrees
@@ -274,19 +274,20 @@ void doExcitation(float stepSize)
             for(relY = - influenceXY; relY<= influenceXY; relY++)
             {
               char neighbourY = getWrappedY(j + relY);
-              for(relTheta = -influenceTheta; relTheta <= -influenceTheta; relTheta++)
+              for(relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
               {
                 char neighbourTheta = getWrappedTheta(k + relTheta);
               	float excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
                 tempPoseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += thisActivation * excitationWeight * stepSize;
+                poseWorld.positionReferences[neighbourX].array2D[neighbourY][neighbourTheta] = 1;
               }
-
             }
         	}
         }
       }
     }
   }
+  fillFinalPose();
 }
 
 //inhibits surrounding cells
@@ -294,6 +295,7 @@ float doInhibition(float stepSize)
 {
 	float inhibition = globalInhibition * stepSize;
   float activationSum = 0;
+  numActive = 0;
 
   char i;
   char j;
@@ -315,6 +317,10 @@ float doInhibition(float stepSize)
           }
           setActivation(i, j, k, activation);
           activationSum += activation;
+          if(activation>0)
+          {
+            numActive++;
+          }
         }
       }
     }
@@ -462,6 +468,9 @@ void pose3D(float deltaTheta, float translation)
 task main()
 {
 	initialisePose();
+	doExcitation(stepSize);
+  float activeSum1 = doInhibition(stepSize);
+  doNormalisation(activeSum1);
 	while(1)
 	{
 		eraseDisplay();
@@ -476,7 +485,7 @@ task main()
 		nxtDisplayString(2, "Act = %4.3f", maxActivation);
 		nxtDisplayString(3, "Num Act. = %d", numActive);
 	  wait10Msec(200);
-	  pose3D(10,10)
+	  //pose3D(10,10);
   }
 }
 /*
