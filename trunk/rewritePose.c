@@ -7,68 +7,20 @@
 | array of PoseCellPositions but rather a 3d array of char which determine if active or not.  The poseActivity matrix
 | is still used - this improvement occured as only using int (or char) movements so the [x], [y] and [theta] will be taken
 | from the matrix numbering system itself
+|
+| further more - each full rotation of the wheel is 360 encoders clicks and 18cm (0.18m)
+|
+| Must determine if i need the tempPoseActivity matrix or can i do without as will save space
+| Can i store the active cells in another from (say a 1d vector) and just use that instead of searching the entire
+| matrix each time - this requires a big look into - would save alot of time
+|
+| rearrange this into a header and C file - then integrate with local view
+|
 */
 
-//variables used for pose cells
-const char sizeX = 10; //number of cells in X dimension
-const char sizeY = 10; //number of cells in Y dimension
-const char sizeTheta = 6; //number of cells in theta dimension
-const char lengthX = 5; //length (x) represented by pose
-const char lengthY = 5; //length (y) represented by pose
-//note theta thought to represent 360 degrees
-float startActivation = 0.5; //the starting activation of the first cell
-char influenceXY = 1; // the level of influence that cells have on neighbouring cells
-char influenceTheta = 1;
-float weightVarianceXY = 0.8;//for gaussian distribution stuff
-float weightVarianceTheta = 0.5;//for gaussian distribution stuff
-char weightScaleFactor = 14; //strength of influence between cells
-float stepSize = 0.2; //this is to account for something
-float globalInhibition = 0.014;
-char poseEstimationRadius = 6;
+//includes
+#include "rewritePose.h";
 int numActive = 0;
-
-//structures
-typedef struct {
-	char x;
-	char y;
-	char theta;
-} PoseCellPosition;
-
-typedef struct {
-	float array2D[sizeY][sizeTheta]; //using an array of structures to create [][][]
-} matrixPoseActivity;
-
-typedef struct {
-	float array2D[3][3];
-} matrixExcite;
-
-typedef struct {
-	float array2D[2][2];
-} matrixDistribution;
-
-typedef struct {
-	char array2D[sizeY][sizeTheta]; //using an array of structures to create [][][] //this will be one if active, zero if not
-} matrixPositionReferences;
-
-typedef struct {
-	matrixPositionReferences positionReferences[sizeX];
-	matrixPoseActivity poseActivity[sizeX];
-	PoseCellPosition maxActivatedCell;
-} PoseCellStructure;
-
-//initalise structures
-PoseCellStructure poseWorld;
-matrixPoseActivity tempPoseActivity[sizeX]; //this is used for calculations on the activity of poses
-matrixExcite excitation_Weights[3];
-matrixDistribution distribution[2];
-PoseCellPosition position;
-
-/*
-'
-'start of functions
-'
-*/
-
 //initialises the start cell and sets starting activation
 void startCell()
 {
@@ -134,7 +86,7 @@ void fillFinalPose()
     }
   }
 }
-
+/*
 void excitationMatrixSetup()
 {
   excitation_Weights[0].array2D[0][0] =  0.0846;
@@ -166,6 +118,39 @@ void excitationMatrixSetup()
   excitation_Weights[2].array2D[2][0] =  0.0846;
   excitation_Weights[2].array2D[2][1] =  0.2953;
   excitation_Weights[2].array2D[2][2] =  0.0846;
+}
+*/
+void excitationMatrixSetup()
+{
+  excitation_Weights[0].array2D[0][0] =  0.0495;
+  excitation_Weights[0].array2D[0][1] =  0.3655;
+  excitation_Weights[0].array2D[0][2] =  0.0495;
+  excitation_Weights[0].array2D[1][0] =  0.1727;
+  excitation_Weights[0].array2D[1][1] =  1.2757;
+  excitation_Weights[0].array2D[1][2] =  0.1727;
+  excitation_Weights[0].array2D[2][0] =  0.0495;
+  excitation_Weights[0].array2D[2][1] =  0.3655;
+  excitation_Weights[0].array2D[2][2] =  0.0495;
+
+  excitation_Weights[1].array2D[0][0] =  0.1727;
+  excitation_Weights[1].array2D[0][1] =  1.2757;
+  excitation_Weights[1].array2D[0][2] =  0.1727;
+  excitation_Weights[1].array2D[1][0] =  0.6026;
+  excitation_Weights[1].array2D[1][1] =  4.4528;
+  excitation_Weights[1].array2D[1][2] =  0.6026;
+  excitation_Weights[1].array2D[2][0] =  0.1727;
+  excitation_Weights[1].array2D[2][1] =  1.2757;
+  excitation_Weights[1].array2D[2][2] =  0.1727;
+
+  excitation_Weights[2].array2D[0][0] =  0.0495;
+  excitation_Weights[2].array2D[0][1] =  0.3655;
+  excitation_Weights[2].array2D[0][2] =  0.0495;
+  excitation_Weights[2].array2D[1][0] =  0.1727;
+  excitation_Weights[2].array2D[1][1] =  1.2757;
+  excitation_Weights[2].array2D[1][2] =  0.1727;
+  excitation_Weights[2].array2D[2][0] =  0.0495;
+  excitation_Weights[2].array2D[2][1] =  0.3655;
+  excitation_Weights[2].array2D[2][2] =  0.0495;
 }
 
 /////////////////////////////
@@ -277,9 +262,9 @@ void doExcitation(float stepSize)
               for(relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
               {
                 char neighbourTheta = getWrappedTheta(k + relTheta);
-              	float excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-                tempPoseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += thisActivation * excitationWeight * stepSize;
-                poseWorld.positionReferences[neighbourX].array2D[neighbourY][neighbourTheta] = 1;
+              	float excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta] * stepSize;
+                tempPoseActivity[neighbourX].array2D[neighbourY][neighbourTheta] += (thisActivation * excitationWeight);
+                poseWorld.positionReferences[neighbourX].array2D[neighbourY][neighbourTheta] = 1; //make cell active as it now has activity
               }
             }
         	}
@@ -287,7 +272,7 @@ void doExcitation(float stepSize)
       }
     }
   }
-  fillFinalPose();
+  fillFinalPose(); //refill poseWorld struct with pose values
 }
 
 //inhibits surrounding cells
@@ -429,6 +414,14 @@ void initialisePose()
   numActive = 1;
 }
 
+void iterate(float stepSize)
+{
+	float activeSum;
+  doExcitation(stepSize);
+  activeSum = doInhibition(stepSize);
+  doNormalisation(activeSum);
+}
+
 //////////////////////////////////////
 //                                  //
 //   Function that runs everthing   //
@@ -443,7 +436,7 @@ void pose3D(float deltaTheta, float translation)
   char k;
 
   //variables
-  float activeSum;
+
 
   //correct any cells that are active and shouldn't be
   for(i = 0; i < 10; i++)
@@ -455,22 +448,18 @@ void pose3D(float deltaTheta, float translation)
         if(poseWorld.positionReferences[i].array2D[j][k] == 1)
         {
 
-          pathIntegrateCell(i, j, k, deltaTheta, translation)
+          pathIntegrateCell(i, j, k, deltaTheta, translation);
         }
       }
     }
   }
-  doExcitation(stepSize);
-  activeSum = doInhibition(stepSize);
-  doNormalisation(activeSum);
+  iterate(stepSize);
 }
 
 task main()
 {
 	initialisePose();
-	doExcitation(stepSize);
-  float activeSum1 = doInhibition(stepSize);
-  doNormalisation(activeSum1);
+	iterate(stepSize);
 	while(1)
 	{
 		eraseDisplay();
@@ -484,8 +473,9 @@ task main()
 		//nxtDisplayString(1, "%d, %d", top, left);
 		nxtDisplayString(2, "Act = %4.3f", maxActivation);
 		nxtDisplayString(3, "Num Act. = %d", numActive);
-	  wait10Msec(200);
-	  //pose3D(10,10);
+	 // wait10Msec(200);
+	  pose3D(0,0.5);
+	  //iterate(stepSize);
   }
 }
 /*
