@@ -259,6 +259,17 @@ void normaliseTemp()
 	}
 }
 
+void fillLocalComparison(char cellNum)
+{
+  char k;
+  for(k=0;k<numNeuralUnits;k++)
+  {
+  localComparison[k] = localCellStruct[cellNum].localCellTemp[k];
+
+  }
+
+}
+
 void setTemp()
 {
 	//initalises temp, get sensor readings and sets the local temp to a normalised neural vector
@@ -343,24 +354,13 @@ void checkLocalCell()
     for(z = 0; z<nextEmptyCell; z++)
     {
     	//search for a previous local cell that matches the current view to a certain degree
-  	  localComparison[0] = localCellStruct[z].localCellTemp[0];
-  	  localComparison[1] = localCellStruct[z].localCellTemp[1];
-  	  localComparison[2] = localCellStruct[z].localCellTemp[2];
-  	  localComparison[3] = localCellStruct[z].localCellTemp[3];
-  	  localComparison[4] = localCellStruct[z].localCellTemp[4];
-  	  localComparison[5] = localCellStruct[z].localCellTemp[5];
-  	  localComparison[6] = localCellStruct[z].localCellTemp[6];
-  	  localComparison[7] = localCellStruct[z].localCellTemp[7];
-  	  localComparison[8] = localCellStruct[z].localCellTemp[8];
-  	  localComparison[9] = localCellStruct[z].localCellTemp[9];
-  	  localComparison[10] = localCellStruct[z].localCellTemp[10];
-  	  localComparison[11] = localCellStruct[z].localCellTemp[11];
+  	  fillLocalComparison(z);
       dotTempValue = dotMultiply();
       tempAngle = acos(dotTempValue);
-      //eraseDisplay();
-      //nxtDisplayString(5, "%3.3f", tempAngle);
-      //wait1Msec(1000);
-      if(tempAngle<0.89)
+      eraseDisplay();
+      nxtDisplayString(5, "%3.3f", tempAngle);
+      wait1Msec(1000);
+      if(tempAngle<0.17)
       {
         //a match - need to check
       	match = 1;
