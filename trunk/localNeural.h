@@ -9,23 +9,22 @@
 ////////////////////////////////////////////////////////////////////
 
 //----Variables----//
-char firstUnit = 15; //for neural units
-char secondUnit = 45;
-char thirdUnit = 75;
-char fourthUnit = 105;
-char fifthUnit = 135;
-char sixthUnit = 195;
+int firstUnit = 15; //for neural units
+int secondUnit = 45;
+int thirdUnit = 75;
+int fourthUnit = 105;
+int fifthUnit = 135;
+int sixthUnit = 195;
 const char numLocalCells = 40; //number of possible views
 const char numNeuralUnits = 18; //number of neural units representing a view
 
 
 //----Functions----//
 void clearTemp();
-void setRight();
-void setCentre();
-void setLeft();
+void setRight(float rightSonarValue);
+void setCentre(float centreSonarValue);
+void setLeft(float leftSonarValue);
 void normaliseTemp();
 void setTemp();
 float dotMultiply();
-void fillStructArray(char cellNum);
 void checkLocalCell();

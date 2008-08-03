@@ -8,8 +8,6 @@
 const tSensors leftSonar            = (tSensors) S1;   //sensorSONAR        //*!!!!*//
 const tSensors centreSonar          = (tSensors) S2;   //sensorSONAR        //*!!!!*//
 const tSensors rightSonar           = (tSensors) S3;   //sensorSONAR        //*!!!!*//
-const tMotor   leftMotor            = (tMotor) motorB; //tmotorNxtEncoderClosedLoop //*!!!!*//
-const tMotor   rightMotor           = (tMotor) motorC; //tmotorNxtEncoderClosedLoop //*!!!!*//
 //*!!CLICK to edit 'wizard' created sensor & motor configuration.                !!*//
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,16 +257,6 @@ void normaliseTemp()
 	}
 }
 
-void fillLocalComparison(char cellNum)
-{
-  char k;
-  for(k=0;k<numNeuralUnits;k++)
-  {
-  localComparison[k] = localCellStruct[cellNum].localCellTemp[k];
-
-  }
-
-}
 
 void setTemp()
 {
@@ -279,57 +267,6 @@ void setTemp()
 	setRight();
 	normaliseTemp();
 }
-
-void StarWars()
-{
-  //        180 = Tempo
-  //          5 = Default octave
-  //    Quarter = Default note length
-  //        10% = Break between notes
-  //
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  932,   90); wait1Msec(1000);  // Note(A#, Duration(Half .))
-  PlayTone( 1047,   90); wait1Msec(1000);  // Note(F6, Duration(Half .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
-  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
-  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
-  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
-  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  784,   60); wait1Msec( 667);  // Note(C6, Duration(Half))
-  PlayTone(    0,   30); wait1Msec( 333);  // Note(Rest)
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  698,   15); wait1Msec( 167);  // Note(F, Duration(Eighth))
-  PlayTone(  932,   90); wait1Msec(1000);  // Note(A#, Duration(Half .))
-  PlayTone( 1047,   90); wait1Msec(1000);  // Note(F6, Duration(Half .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
-  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
-  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  784,   15); wait1Msec( 167);  // Note(C6, Duration(Eighth))
-  PlayTone( 1398,   90); wait1Msec(1000);  // Note(A#6, Duration(Half .))
-  PlayTone( 1047,   45); wait1Msec( 500);  // Note(F6, Duration(Quarter .))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  880,   15); wait1Msec( 167);  // Note(D6, Duration(Eighth))
-  PlayTone(  933,   15); wait1Msec( 167);  // Note(D#6, Duration(Eighth))
-  PlayTone(  784,   60); wait1Msec( 667);  // Note(C6, Duration(Half))
-  return;
-}
-
-
 
 void checkLocalCell()
 {

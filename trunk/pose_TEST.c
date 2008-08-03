@@ -16,18 +16,27 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
+* Need to compare with poselocal code and match
+*
+*
+*/
+
+
+
 //----include files----//
 #include "poseCell.h";
 
 //----General In-Module Variables----//
 int numActive = 0; //number of active cells
 int currentTheta = 0; //theta for pose and turns
-char currentDirection = 0; //direction for pose and turns
+int currentDirection = 0; //direction for pose and turns
 int changeTheta = 0;
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 int clicks = 180;
 int totalClicks = 0;
 int numberOfCells = 4*sizeTheta*sizeX*sizeY;
+
 //                           //
 //----Pose Cell Functions----//
 //                           //
@@ -98,8 +107,8 @@ int getRotation()
 {
 	float motorBCount = nMotorEncoder[motorB];
 	float motorCCount = nMotorEncoder[motorC];
-	motorBCount /= 240; //distance between wheels in encoder clicks
-	motorCCount /= 240;
+	motorBCount /= 190; //distance between wheels in encoder clicks
+	motorCCount /= 190;
 	int thetaOne;
 	int thetaTwo;
 	int thetaThree;
@@ -121,6 +130,12 @@ int getRotation()
   {
   	motorBCount *= -1;
   	motorCCount *= -1;
+  	thetaOne = radiansToDegrees(atan(motorBCount));
+	  thetaTwo = radiansToDegrees(atan(motorCCount));
+	  return (thetaOne + thetaTwo);
+  }
+  else
+  {
   	thetaOne = radiansToDegrees(atan(motorBCount));
 	  thetaTwo = radiansToDegrees(atan(motorCCount));
 	  return (thetaOne + thetaTwo);
@@ -358,8 +373,8 @@ void pathIntegrateCell(char xp, char yp, char thetap, float deltaTheta, float tr
 	char y;
 	char theta;
 
-	float deltaPoseX = (cosDegrees(deltaTheta) * translation) / 0.5;/// (lengthX / sizeX);
-  float deltaPoseY = (sinDegrees(deltaTheta) * translation) / 0.5; //(lengthX / sizeX);
+	float deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
+  float deltaPoseY = (sinDegrees(currentDirection) * translation) / 0.5; //(lengthX / sizeX);
 	float deltaPoseTheta = deltaTheta / 60;//(360 / sizeTheta);
 
   int intOffsetX = (int) deltaPoseX; //only a whole number of cells moved
@@ -408,7 +423,7 @@ void pose3D(float deltaTheta, float translation)
   char f;
   char g;
   char h;
-  memset(tempPose, 0, 2400);
+  memset(tempPose, 0, 2400); //a zero matrix to perform path integration on
   for(f = 0; f < sizeX; f++)
   {
     for(g = 0; g < sizeY; g++)
@@ -426,7 +441,7 @@ void pose3D(float deltaTheta, float translation)
   iterate(stepSize);
 }
 
-
+/*
 //----Set direction and theta if turning----//
 void handleDirection(char turn)
 {
@@ -511,7 +526,7 @@ void handleDirection(char turn)
 		 default: break;
 	}
 }
-
+*/
 //----Display Max Activated cell----//
 void displayMax()
 {
@@ -541,20 +556,20 @@ void datalogging()
 //----test drives (lol)----//
 void drive(char synchRatio, int travelDistance, char speed)
 {
+	//note a 90 degree turn is ~190 encoders clicks
+	clearEncoders();
 	nSyncedMotors = synchBC;
 	nSyncedTurnRatio = synchRatio;
 	nMotorPIDSpeedCtrl[motorB] = mtrSpeedReg;
+	//nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
   nMotorEncoderTarget[motorB] = travelDistance;
 	motor[motorB] = speed;
   while(nMotorRunState[motorB] != runStateIdle) {}
   changeTheta = getRotation();
-  if(changeTheta > 0)
+  currentDirection += changeTheta;
+  if(currentDirection > 360)
   {
-    handleDirection('r');
-  }
-  else if(changeTheta < 0)
-  {
-    handleDirection('l');
+  	currentDirection -= 360;
   }
 }
 
@@ -570,47 +585,36 @@ task main ()
   changeTheta = 0;
 
   //display data
-  displayMax();
-  nxtDisplayTextLine(2, "Num Act.: %3d",numActive);
-  nxtDisplayTextLine(4, "Direction:- %1d", currentDirection);
-  nxtDisplayTextLine(5, "Heading:- %3d", currentTheta);
+ displayMax();
+    nxtDisplayTextLine(2, "Num Act.: %3d",numActive);
+    nxtDisplayTextLine(4, "Direction: %1d", currentDirection);
+    nxtDisplayTextLine(5, "currentTheta:%3d", currentTheta);
+    nxtDisplayTextLine(6, "changeTheta:%3d", changeTheta);
 	datalogging();
-
-  while(totalClicks<=3600)
+  while(totalClicks<1800)
 	{
 		alive(); //stop NXT from sleeping
     totalClicks += clicks;
-    drive(-100,200,-50);
-    /*if(totalClicks == 900)
+    //drive(-100,190,50);
+    drive(50,180,50);
+   /* if(totalClicks == 900)
     {
-	    nSyncedTurnRatio = -100;
-	  	nMotorEncoderTarget[motorB] = 190;
-	    motor[motorB] = 50;
-	    while(nMotorRunState[motorB] != runStateIdle) {}
-	    handleDirection('r');
+    	drive(-100,190,50);
     }
     else if(totalClicks==1800)
     {
-    nSyncedTurnRatio = -100;
-	  nMotorEncoderTarget[motorB] = 190;
-	  motor[motorB] = 50;
-	  while(nMotorRunState[motorB] != runStateIdle) {}
-	    handleDirection('r');
+    	drive(-100,190,50);
     }
     else if(totalClicks==2700)
     {
-    nSyncedTurnRatio = -100;
-	  nMotorEncoderTarget[motorB] = 190;
-	  motor[motorB] = 50;
-	  while(nMotorRunState[motorB] != runStateIdle) {}
-	    handleDirection('r');
+      drive(-100,190,50);
     }*/
 
-    pose3D(changeTheta,0);
+    pose3D(changeTheta,0.5);
 
     displayMax();
     nxtDisplayTextLine(2, "Num Act.: %3d",numActive);
-    nxtDisplayTextLine(4, "Direction:- %1d", currentDirection);
+    nxtDisplayTextLine(4, "Direction: %1d", currentDirection);
     nxtDisplayTextLine(5, "currentTheta:%3d", currentTheta);
     nxtDisplayTextLine(6, "changeTheta:%3d", changeTheta);
     clearEncoders(); //clear encoder count
@@ -618,5 +622,7 @@ task main ()
     datalogging();
 
   }
+  PlaySound(soundFastUpwardTones);
+  while(bSoundActive) {}
   SaveNxtDatalog();
 }
