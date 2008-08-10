@@ -12,8 +12,6 @@
 const char sizeX = 10; //number of cells in X dimension
 const char sizeY = 10; //number of cells in Y dimension
 const char sizeTheta = 6; //number of cells in theta dimension
-const char lengthX = 5; //length (x) represented by pose
-const char lengthY = 5; //length (y) represented by pose
 
 float startActivation = 0.5; //the starting activation of the first cell
 char influenceXY = 1; // the level of influence that cells have on neighbouring cells
@@ -25,6 +23,16 @@ float stepSize = 0.2; //this is to account for something
 float globalInhibition = 0.014;//0.014
 char poseEstimationRadius = 6;
 float injectionStrength = 0.075;
+
+char fiftyPercent[36] = {0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0};
+char seventyFivePercent[36] = {1,1,0,1,1,1,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,0,1,1,1,1,0,1,1};
+char twentyfivePercent[36] = {0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0};
+char fifteenPercent[36] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0};
+char thirtyThreePercent[36] = {0,0,0,0,1,0,0,1,0,1,0,0,0,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,0,0,0,1,0,1,0,0};
+char sixtySevenPercent[36] = {1,1,0,1,1,1,1,0,1,0,1,0,0,1,1,1,0,1,1,0,1,1,1,0,0,1,0,1,0,1,1,1,1,0,1,1};
+char eightyFivePercent[36] = {1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1};
+char twoPercent[36] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 
 //----Structures - mainly 3D arrays----//
 
@@ -76,8 +84,6 @@ poseCellAssociation poseAssoc[40];
 //----Initialises functions----//
 void startCell();
 void setupPoseStructure();
-void fillTempPose();
-void fillFinalPose();
 void excitationMatrixSetup();
 char getWrappedX(char indexX);
 char getWrappedY(char indexY);
@@ -92,3 +98,4 @@ void pathIntegrateCell(char xp, char yp, char thetap, float deltaTheta, float tr
 void initialisePose();
 void iterate(float stepSize);
 void pose3D(float deltaTheta, float translation);
+void drawRect(char xCo, char yCo, char percent);
