@@ -15,7 +15,7 @@ int thirdUnit = 75;
 int fourthUnit = 105;
 int fifthUnit = 135;
 int sixthUnit = 195;
-const char numLocalCells = 40; //number of possible views
+const char numLocalCells = 200; //number of possible views
 const char numNeuralUnits = 18; //number of neural units representing a view
 
 
