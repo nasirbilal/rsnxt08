@@ -483,7 +483,7 @@ task main ()
   int motorCError = 0;
   int step1 = 160;
   int step2 = 123;
-	while(nextEmptyCell!=200)
+	while(numLoops < 2)
 	{
 
 	nSyncedMotors = synchNone;

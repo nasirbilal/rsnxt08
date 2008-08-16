@@ -62,9 +62,7 @@ int changeTheta = 0;
 float localTemp[numNeuralUnits]; //holds the temporary neural value
 float localComparison[numNeuralUnits]; //what the local cell data is loaded into
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
-int encoderX = 0; //total move in x-direction in encoder clicks for experiences
-int encoderY = 0; //total move in y-direction in encoder clicks for experiences
-int encoderTheta = 0; //will equal change theta
+int numberOfCells = 4*sizeTheta*sizeX*sizeY;
 
 //                           //
 //----Pose Cell Functions----//
@@ -494,7 +492,10 @@ void drive(char synchRatio, int travelDistance, char speed)
 	//nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
   nMotorEncoderTarget[motorB] = travelDistance;
 	motor[motorB] = speed;
-  while(nMotorRunState[motorB] != runStateIdle) {}
+  while(nMotorRunState[motorB] != runStateIdle)
+  {
+
+  }
   changeTheta = getRotation();
   currentDirection += changeTheta;
   if(currentDirection > 360)
@@ -1081,6 +1082,27 @@ void sumPoseStruct()
   }
 }
 
+task poseLocal()
+{
+	 hogCPU();
+	 pose3D(changeTheta,0.5);
+   setTemp();
+   checkLocalCell();
+	 sumPoseStruct();
+	 releaseCPU();
+
+}
+
+task poseLocalTurn()
+{
+	hogCPU();
+	 pose3D(changeTheta,0);
+   setTemp();
+   checkLocalCell();
+	 sumPoseStruct();
+	  releaseCPU();
+	}
+
 //----main----//
 task main ()
 {
@@ -1099,6 +1121,7 @@ task main ()
   */
   datalogging();
   sumPoseStruct();
+  ClearTimer(T1);
 	while(nextEmptyCell<numLocalCells)
 	{
 		alive(); //stop NXT from sleeping
@@ -1106,18 +1129,24 @@ task main ()
 
 		//nxtDisplayCenteredTextLine(2, "Num Active: - %4d",numActive);
     float centreSonarValue = SensorValue(centreSonar);
-    if(centreSonarValue<19)
-	  {
-	  	doTurn();
-	  	pose3D(changeTheta,0);
-	  }
-	  else {
-	  drive(100,180,50);
-    pose3D(changeTheta,0.5);
-    }
-    sumPoseStruct();
-    setTemp();
-    checkLocalCell();
+    if(time100[T1] == 10)
+    {
+			if(centreSonarValue<19)
+			{
+				doTurn();
+				//pose3D(changeTheta,0);
+				StartTask(poseLocalTurn);
+			}
+			else {
+			drive(100,180,50);
+			StartTask(poseLocal);
+			//pose3D(changeTheta,0.5);
+			}
+			ClearTimer(T1);
+		}
+    //sumPoseStruct();
+   // setTemp();
+    //checkLocalCell();
 /*
     displayMax();
     nxtDisplayTextLine(2, "Num Act.: %3d",numActive);
