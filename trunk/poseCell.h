@@ -23,6 +23,7 @@ float stepSize = 0.2; //this is to account for something
 float globalInhibition = 0.014;//0.014
 char poseEstimationRadius = 6;
 float injectionStrength = 0.075;
+int numberOfCells = 4*sizeTheta*sizeX*sizeY;
 
 char fiftyPercent[36] = {0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0};
 char seventyFivePercent[36] = {1,1,0,1,1,1,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,0,1,1,1,1,0,1,1};
@@ -79,7 +80,7 @@ matrixExcite excitation_Weights[3];
 matrixDistribution distribution[2];
 matrixPoseActivity tempPose[sizeX];
 PoseCellPosition position;
-poseCellAssociation poseAssoc[40];
+poseCellAssociation poseAssoc[numLocalCells];
 
 //----Initialises functions----//
 void startCell();
