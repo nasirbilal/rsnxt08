@@ -27,7 +27,7 @@ int changeTheta = 0;
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 int clicks = 180;
 int totalClicks = 0;
-int numberOfCells = 4*sizeTheta*sizeX*sizeY;
+
 
 //                           //
 //----Pose Cell Functions----//
