@@ -2,7 +2,7 @@
 //--this structs are still under debate--//
 
 //includes and main variables
-#include "math.c"
+#include "math.h"
 #include "experienceMap.h"
 int nextID = 0; //main file
 int nextLink = 0;//main file
@@ -12,8 +12,8 @@ experience tempExperience;
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local)
 {
 	Map.experienceMap[id].ID = id;
-  memcpy(Map.experienceMap[id].odoPose,odo,6);
-  memcpy(Map.experienceMap[id].poseCellsPose, pose,6);
+  memcpy(Map.experienceMap[id].odoPose,odo, 6);
+  memcpy(Map.experienceMap[id].poseCellsPose, pose, 6);
   memcpy(Map.experienceMap[id].localView, local,72);
 }
 
@@ -27,6 +27,7 @@ void createNewExperience()
 	//memcpy(tempExperience.odoPose,encoderData,6);
 	//memcpy(tempExperience.poseCellsPose,maxActivatedCell.pose,6);
 	//memcpy(tempExperience.localView,localTemp,72);
+  memcpy(Map.currentExperience,tempExperience,112);
   nextID++;
 }
 
@@ -72,7 +73,7 @@ void linkLastToCurrent()
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
       newMapPose.theta = (lastMapPose.theta + rotation);
       memcpy(Map.currentExperience.mapPose, newMapPose, 6); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 110); //put currentExperience on the map
+      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 112); //put currentExperience on the map
     }
     char y;
     int linkNumber;
@@ -124,7 +125,7 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience,cExperience,110); //need to check this works may have to use memcpy
+	memcpy(Map.currentExperience,cExperience,112); //need to check this works may have to use memcpy
 	Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
@@ -225,16 +226,69 @@ int matchExperience(experience &currentExperience)
 }
 
 //----Corrects the Experience Map----//
+//So far have used floats but as all structs use ints i may be able to get away with not using floats at all. Yay to the memory savings
 void mapCorrection()
 {
-	//still to come
+	float mapCorrectionXY = mapCorrectionRateXY * 0.5;
+	float mapCorrectionTheta = mapCorrectionRateTheta * 0.5;
 
+	experience startExperience;
+	experience endExperience;
+	vector3D startPose;
+	vector3D endPose;
+	experienceLink link;
 
+	char z; //for loop
+	for(z = 0; z <(nextID-1); z++)
+	{
+		memcpy(startExperience,Map.experienceMap[z],110); //copy experience being manipulated into startExperience
+		memcpy(startPose, startExperience.mapPose, 6); //copy mapPose being manipulated into startPose
+    char y; //for loop
+    for(y = 0; y < numOfLinksPerExperience; y++)
+    {
+      if(startExperience.outLinks[y] != -1)
+      {
+        memcpy(link,links[startExperience.outLinks[y]],12);
+        memcpy(endExperience,Map.experienceMap[link.endExperienceID],110);
+        memcpy(endPose, endExperience.mapPose, 6);
 
+        //expected position of the end experience
+        float angleToTargetEnd = startPose.theta + link.translationAngle;
+        float targetEndX = startPose.x + link.translationDistance * cosDegrees(angleToTargetEnd);
+        float targetEndY = startPose.y + link.translationDistance * sinDegrees(angleToTargetEnd);
 
+        //expected orientation of the end experience
+        float targetEndAngle = startPose.theta + link.rotation;
 
+        //Calulate the 'error' between expected and actual position of end experience
+        float xError = targetEndX - endPose.x;
+        float yError = targetEndY - endPose.y;
+        float thetaError = getRotationDegrees(endPose.theta,targetEndAngle);
+
+        //calculate the adjustment to be made for start and end poses
+        float xAdjustment = xError * mapCorrectionXY;
+        float yAdjustment = yError * mapCorrectionXY;
+        float thetaAdjustment = thetaError * mapCorrectionTheta;
+
+        //Apply adjustments then copy back over previous experiences
+        startPose.x -= xAdjustment;
+        startPose.y -= yAdjustment;
+        startPose.theta = wrappedDegrees360(startPose.theta - thetaAdjustment);
+
+        endPose.x += xAdjustment;
+        endPose.y += yAdjustment;
+        endPose.theta = wrappedDegrees360(endPose.theta + thetaAdjustment);
+
+        memcpy(startExperience.mapPose, startPose, 6);
+        memcpy(Map.experienceMap[z], startExperience, 110);
+
+        memcpy(endExperience.mapPose, endPose, 6);
+        memcpy(Map.experienceMap[link.endExperienceID],endExperience,110);
+      }
+      else {break;} //leave loop faster as there are no more links
+    }
+  }
 }
-
 
 
 task main()
