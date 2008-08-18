@@ -8,13 +8,19 @@
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
-//----Variables----//
+//----Variables and Definitions----//
 float maxAssociationRadiusXY = 0.35;
 char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
 char mapCorrectionRateXY = 1;
 char mapCorrectionRateTheta = 1;
 const int numOfExperiences = 5; //main file
+const int numOfLinksPerExperience = 5;
 
+#define SIZE_VECTOR3D (int) 6;
+#define SIZE_LOCAL_VIEW  (int) 72;
+#define SIZE_EXPERIENCE  (int) 112;
+#define SIZE_EXPERIENCE_LINK (int) 12;
+#define SIZE_OUTLINKS (numOfLinksPerExperience * 2);
 //----Structs----//
 typedef struct
 {
@@ -41,9 +47,9 @@ typedef struct
   //the local view for this experience
 	localViewCell localView; //72 bytes ---->total = 90
 	//holds the index for the experienceLink array for all experiences links for this experience to others
-	int outLinks[5];  //10
+	int outLinks[numOfLinksPerExperience];  //10
 	//holds the index for the experienceLink array for all experiences links for this experience to others
-	int inLinks[5]; //10
+	int inLinks[numOfLinksPerExperience]; //10
 	//for moment assuming only max of 5 links
 } experience;
 
@@ -69,7 +75,7 @@ typedef struct
 
 //----Functions----//
 experienceMapModule Map;
-experienceLink links[5];
+experienceLink links[numOfExperiences];
 
 //sets experience - not sure if i really need this
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local);
