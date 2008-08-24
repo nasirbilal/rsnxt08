@@ -18,10 +18,12 @@
 
 //----include files----//
 #include "localNeural.h";
-typedef struct
-{
-  float localView[numNeuralUnits];
-} localHolder;
+//testing writing to text files
+TFileHandle hFileHandle = 0;
+TFileIOResult nIoResult;
+short nFileSize = 7000;
+const string sFileName = "local.dat";
+
 
 
 //----General In-Module Variables----//
@@ -31,12 +33,11 @@ char currentDirection = 0; //direction for pose and turns
 float localTemp[numNeuralUnits]; //holds the temporary neural value
 float localComparison[numNeuralUnits]; //what the local cell data is loaded into
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
-localHolder poseAssoc[numLocalCells];
 
-//                           //
-//----Pose Cell Functions----//
-//                           //
+void writeLocal(localViewCell &cell)
+{
 
+}
 
 //                            //
 //----Local View Functions----//
@@ -65,11 +66,6 @@ void datalogging2(char cellNum)
   }*/
 }
 
-
-void clearLocal()
-{
-	memset(poseAssoc, 0, 72*numLocalCells);
-}
 
 //----Set the right neural units----//
 void setRight(float rightSonarValue)
@@ -470,7 +466,7 @@ void doTurn()
 //----main----//
 task main ()
 {
-	nMaxRegulatedSpeed = 750;
+	Delete(sFileName, nIoResult);
 	clearLocal();
 	nxtDisplayCenteredTextLine(3, "Roaming");
 	nxtDisplayCenteredTextLine(5, "This is a test");

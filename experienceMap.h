@@ -13,14 +13,9 @@ float maxAssociationRadiusXY = 0.35;
 char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
 char mapCorrectionRateXY = 1;
 char mapCorrectionRateTheta = 1;
-const int numOfExperiences = 5; //main file
-const int numOfLinksPerExperience = 5;
+const char numOfExperiences = 1; //main file
+const char numOfLinksPerExperience = 1; //assuming not many links between various experiences - this could be reduced
 
-#define SIZE_VECTOR3D (int) 6;
-#define SIZE_LOCAL_VIEW  (int) 72;
-#define SIZE_EXPERIENCE  (int) 112;
-#define SIZE_EXPERIENCE_LINK (int) 12;
-#define SIZE_OUTLINKS (numOfLinksPerExperience * 2);
 //----Structs----//
 typedef struct
 {
@@ -31,7 +26,14 @@ typedef struct
 
 typedef struct
 {
-  float localArray[18];
+  char x;
+	char y;
+	char theta;
+} vector3DPose;
+
+typedef struct
+{
+  int localArray[18];
 } localViewCell;
 
 typedef struct
@@ -43,7 +45,7 @@ typedef struct
   //in terms of odometry from encoders
 	vector3D odoPose;  //6bytes
   //in terms of pose cells
-	vector3D poseCellsPose; //6bytes
+	vector3DPose poseCellsPose; //3bytes
   //the local view for this experience
 	localViewCell localView; //72 bytes ---->total = 90
 	//holds the index for the experienceLink array for all experiences links for this experience to others
@@ -65,11 +67,11 @@ typedef struct
 
 typedef struct
 {
-	int lastMatchedExperienceID; //id of the last matched experience
-	int lastExperienceMeanTime;
-	experience currentExperience;
-	int currentExperienceStartTime;
-	experience experienceMap[numOfExperiences];
+	int lastMatchedExperienceID; //id of the last matched experience //2
+	int lastExperienceMeanTime; //2
+	experience currentExperience; //112
+	int currentExperienceStartTime; //2
+	experience experienceMap[numOfExperiences]; //5*112 = 560
 } experienceMapModule;
 
 
@@ -77,27 +79,15 @@ typedef struct
 experienceMapModule Map;
 experienceLink links[numOfExperiences];
 
-//sets experience - not sure if i really need this
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local);
-
-void createNewExperience(); //still needs work to make it compatible with poseLocal
-
+void createNewExperience(experience &newE);
+void setOutlinks(char linkID, experience &startE, experience &endE);
 void linkLastToCurrent();
-
-void linkExperience(experience &cExperience);
-
-//sets links --------------may need fixing
 void setLink(int startID, int endID);
-
-//----Compares arrays - this is due to RobotC unable to do this----//
 char compareArray(localViewCell &view1, localViewCell &view2);
-
-//----Compares two Experiences----//
 float compareTo(experience &experience1, experience &experience2);
-
-//this compares the current experience to previous experiences returning the closest matching experience
-//returning the array id of the closest experience.
-int matchExperience(experience &currentExperience);
-
-//----Corrects the Experience Map----//
+int matchExperience(experience &matchE);
 void mapCorrection();
+void startUp();
+void iterateMap();
+void initaliseMap();

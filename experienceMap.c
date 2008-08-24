@@ -6,43 +6,63 @@
 #include "experienceMap.h"
 int nextID = 0; //main file
 int nextLink = 0;//main file
-experience tempExperience;
+vector3D encoderData;
+vector3DPose maxActivatedCellPose;
+localViewCell localTempView;
+TFileHandle hFileHandle = 0;
+TFileIOResult nIoResult;
+short nFileSize = 1000;
+const string sFileName = "experiences.dat";
 
-//sets experience - not sure if i really need this
-void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local)
+void createNewExperience(experience &newE)
 {
-	Map.experienceMap[id].ID = id;
-  memcpy(Map.experienceMap[id].odoPose,odo, 6);
-  memcpy(Map.experienceMap[id].poseCellsPose, pose, 6);
-  memcpy(Map.experienceMap[id].localView, local,72);
+  //going to assume everytime a createNewExperience is called it will affect the Map.currentExperience experience cell
+	memset(newE,0,112);
+	char temp[5] = {-1,-1,-1,-1,-1}; //My null symbol
+	newE.mapPose.x = -1; //null - not yet set up
+	newE.ID = nextID;
+	memcpy(newE.outLinks,temp,10); //initalise to null
+  memcpy(newE.inLinks,temp,10);
+	memcpy(newE.odoPose,encoderData,6);
+	memcpy(newE.poseCellsPose,maxActivatedCellPose,3);
+	memcpy(newE.localView,localTempView,72);
 }
 
-void createNewExperience()
+//----Sets Outlinks and Inlinks----//
+void setOutlinks(char linkID, experience &startE, experience &endE)
 {
-	int temp[5] = {-1,-1,-1,-1,-1};
-	tempExperience.mapPose.x = -1;
-	tempExperience.ID = nextID;
-	memcpy(tempExperience.outLinks,temp,10);
-  memcpy(tempExperience.inLinks,temp,10);
-	//memcpy(tempExperience.odoPose,encoderData,6);
-	//memcpy(tempExperience.poseCellsPose,maxActivatedCell.pose,6);
-	//memcpy(tempExperience.localView,localTemp,72);
-  memcpy(Map.currentExperience,tempExperience,112);
-  nextID++;
+	char t; //for loop
+	for(t = 0; t<numOfLinksPerExperience; t++)
+	{
+	  if(startE.outLinks[t] == -1)//an empty link
+	  {
+	  	startE.outLinks[t] = linkID;
+	  	break;
+	  }
+	}
+	for(t = 0; t<numOfLinksPerExperience; t++)
+	{
+		if(endE.inLinks[t] == -1)//an empty link
+	  {
+	  	endE.inLinks[t] = linkID;
+	  	break;
+	  }
+
+	}
 }
 
 //Due to various information being needed to calculate the link it is necessary to create the temp experience
 // 'currentExperience' and insert it into the experience map once a new experience becomes active
 // the linkLastToCurrent performs the linking - with the linkExperience calling that and setting up a new temp
 // experience
-void linkLastToCurrent()
+void linkLastToCurrent() //note:- trying char for now to try and cut memory problems
 {
-  float currentMeanTime = (Map.currentExperienceStartTime + nPgmTime) / 2;
+  int currentMeanTime = (Map.currentExperienceStartTime + (nPgmTime/1000)) / 2;
 
   if(Map.lastMatchedExperienceID != -1) //therefore not null
   {
   	//time taken for transistion
-  	float transitionTime = currentMeanTime - Map.lastExperienceMeanTime;
+  	char transitionTime = currentMeanTime - Map.lastExperienceMeanTime; //shouldnt be more than 128 seconds for transistion
 
   	//Set up pose info and copy data into
     vector3D currentOdoPose;
@@ -51,8 +71,7 @@ void linkLastToCurrent()
     memcpy(lastOdoPose,Map.experienceMap[Map.lastMatchedExperienceID].odoPose,6); //same as above
 
     //angle to current (angle = atan(y/x))
-    float angleToCurrent;
-    angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
+    float angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
     float translationAngle = lastOdoPose.theta - angleToCurrent;
 
     //translation distance (in encoder clicks)
@@ -101,9 +120,10 @@ void linkLastToCurrent()
     	link.translationDistance = translationDistance;
     	link.rotation = rotation;
     	memcpy(links[nextLink],link,12);
+    	setOutlinks(nextLink, Map.experienceMap[Map.lastMatchedExperienceID],Map.experienceMap[Map.currentExperience.ID]); //sets the outlinks and inlinks
     	nextLink++; //increment new link
     }
-    //else if link
+    //else if link existes, update
     else
     {
       experienceLink previous;
@@ -125,8 +145,8 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience,cExperience,112); //need to check this works may have to use memcpy
-	Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
+	memcpy(Map.currentExperience, cExperience, 112); //add experience
+  Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
 
@@ -207,14 +227,14 @@ float compareTo(experience &experience1, experience &experience2)
 
 //this compares the current experience to previous experiences returning the closest matching experience
 //returning the array id of the closest experience.
-int matchExperience(experience &currentExperience)
+int matchExperience(experience &matchE)
 {
   float maxScore = 0;
-  int closestMatch = 0;
+  int closestMatch = -1;
 	char x;
-	for(x = 0; x<numOfExperiences; x++)
+	for(x = 0; x<nextID; x++)
 	{
-		float score = compareTo(currentExperience,Map.experienceMap[x]);
+		float score = compareTo(matchE,Map.experienceMap[x]);
 		if(score > maxScore)
 		{
 		  	closestMatch = x;
@@ -290,9 +310,162 @@ void mapCorrection()
   }
 }
 
-
-task main()
+//----creates the first experience----//
+void startUp()
 {
+	experience startUpExperience;
+  createNewExperience(startUpExperience);
+  startUpExperience.mapPose.x = 0;
+  startUpExperience.mapPose.y = 0;
+  startUpExperience.mapPose.theta = 0;
+  memcpy(Map.currentExperience,startUpExperience,112);
+  Map.currentExperienceStartTime = (int) (nPgmTime/1000);
+  //this is my addition - i couldn't find in the java code where the first current view was create placed on the experience map
+  memcpy(Map.experienceMap[nextID],Map.currentExperience,112);
+  Map.lastMatchedExperienceID = 0;
+  nextID++;
+}
 
+void iterateMap(float stepSize)
+{
+  experience newExperience;
+  createNewExperience(newExperience);
+  int closestExperience = matchExperience(newExperience);
+
+  if(closestExperience != -1)
+  {
+    if(closestExperience != nextID)
+    {
+    	experience closeExperience;
+    	memcpy(closestExperience,Map.experienceMap[closestExperience],112);
+    	linkExperience(closeExperience);
+    }
+  }
+  else
+  {
+    linkExperience(newExperience);
+    nextID++;
+  }
+}
+
+void initaliseMap()
+{
+	memset(Map,0,678);
+	Map.lastMatchedExperienceID = -1;
+	memset(Links,0,60);
+  memset(encoderData,0,6);
+  memset(maxActivatedCellPose,0,6);
+  memset(localTempView,0,72);
+  Delete(sfilename, nIoResult);
+}
+/*
+void writeExperiences()
+{
+	OpenWrite(  hFileHandle, nIoResult, sFileName, nFileSize);
+	if (nIoResult != ioRsltSuccess)
+	PlaySound(soundLowBuzz);
+	else
+	{
+		int eID;
+		vector3D eMapPose;
+		vector3D eOdoPose;
+		vector3D ePoseCellsPose;
+		localViewCell eLocalView;
+		int eOutLinks[5];
+		int eInLinks[5];
+		char nIndex;
+		for (nIndex = 0; nIndex < nextID; nIndex++)
+		{
+			memcpy(eID, Map.experienceMap[nIndex].ID,2);
+      memcpy(eMapPose, Map.experienceMap[nIndex].mapPose,6);
+      memcpy(eOdoPose, Map.experienceMap[nIndex].odoPose,6);
+      memcpy(ePoseCellsPose, Map.experienceMap[nIndex].poseCellsPose,6);
+      memcpy(eLocalView, Map.experienceMap[nIndex].localView,72);
+      memcpy(eOutLinks, Map.experienceMap[nIndex].outLinks,10);
+      memcpy(eInLinks, Map.experienceMap[nIndex].inLinks,10);
+
+      WriteString(hFileHandle, nIoResult, "ID");
+      WriteShort(hFileHandle, nIoResult, eID);
+      WriteString(hFileHandle, nIoResult, "mapPose");
+      WriteShort(hFileHandle, nIoResult, eMapPose.x);
+      WriteShort(hFileHandle, nIoResult, eMapPose.y);
+      WriteShort(hFileHandle, nIoResult, eMapPose.theta);
+      WriteString(hFileHandle, nIoResult, "odoPose");
+      WriteShort(hFileHandle, nIoResult, eOdoPose.x);
+      WriteShort(hFileHandle, nIoResult, eOdoPose.y);
+      WriteShort(hFileHandle, nIoResult, eOdoPose.theta);
+      WriteString(hFileHandle, nIoResult, "poseCellsPose");
+      WriteShort(hFileHandle, nIoResult, ePoseCellsPose.x);
+      WriteShort(hFileHandle, nIoResult, ePoseCellsPose.y);
+      WriteShort(hFileHandle, nIoResult, ePoseCellsPose.theta);
+      WriteString(hFileHandle, nIoResult, "Local View");
+      char x;
+      for(x = 0; x<18; x++)
+      {
+        WriteFloat(hFileHandle, nIoResult, eLocalView.localArray[x]);
+      }
+      WriteString(hFileHandle, nIoResult, "outLinks");
+      for(x = 0; x<5; x++)
+      {
+        WriteShort(hFileHandle, nIoResult, eOutLinks[x]);
+      }
+      WriteString(hFileHandle, nIoResult, "inLinks");
+      for(x = 0; x<5; x++)
+      {
+        WriteShort(hFileHandle, nIoResult, eInLinks[x]);
+      }
+      WriteString(hFileHandle, nIoResult, "End \n");
+			if (nIoResult != ioRsltSuccess)
+			{
+				PlaySound(soundLowBuzz);
+				break;
+			}
+		}
+	}
+	Close(hFileHandle, nIoResult);
+
+
+
+}
+*/
+task main()
+{//testing time bitch
+  initaliseMap();
+  encoderData.x = 0;
+  encoderData.y = 0;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 5;
+  maxActivatedCellPose.y = 5;
+  maxActivatedCellPose.theta = 0;
+  float tempArray[18] = {0.5,0.5,0,0,0,0,0.5,0.5,0,0,0,0,0.5,0.5,0,0,0,0};
+  memcpy(localTempView,tempArray,72);
+  startUp();
+  encoderData.x = 100;
+  encoderData.y = 100;
+  encoderData.theta = 20;
+  maxActivatedCellPose.x = 6;
+  maxActivatedCellPose.y = 5;
+  maxActivatedCellPose.theta = 0;
+  float tempArray2[18] = {0.6,0.4,0,0,0,0,0.5,0.5,0,0,0,0,0.5,0.5,0,0,0,0};
+  memcpy(localTempView, tempArray2, 72);
+  iterateMap(1);
+  encoderData.x = 200;
+  encoderData.y = 200;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 7;
+  maxActivatedCellPose.y = 6;
+  maxActivatedCellPose.theta = 0;
+  float tempArray3[18] = {0.4,0.6,0,0,0,0,0.6,0.4,0,0,0,0,0.3,0.7,0,0,0,0};
+  memcpy(localTempView, tempArray3, 72);
+  iterateMap(1);
+  encoderData.x = 300;
+  encoderData.y = 300;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 8;
+  maxActivatedCellPose.y = 7;
+  maxActivatedCellPose.theta = 0;
+  float tempArray4[18] = {0.3,0.7,0,0,0,0,0.6,0.4,0,0,0,0,0.3,0.7,0,0,0,0};
+  memcpy(localTempView, tempArray4, 72);
+  iterateMap(1);
 
 }
