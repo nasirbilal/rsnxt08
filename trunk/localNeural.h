@@ -21,9 +21,9 @@ const char numNeuralUnits = 18; //number of neural units representing a view
 
 //----Functions----//
 void clearTemp();
-void setRight(float rightSonarValue);
-void setCentre(float centreSonarValue);
-void setLeft(float leftSonarValue);
+void setRight(int rightSonarValue);
+void setCentre(int centreSonarValue);
+void setLeft(int leftSonarValue);
 void normaliseTemp();
 void setTemp();
 float dotMultiply();

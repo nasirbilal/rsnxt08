@@ -1,9 +1,9 @@
 //////this c file just holds math functions useful to use with ratSLAM///////
 
 //get Degrees
-float getDegrees(float angle)
+int getDegrees(int angle)
 {
-  return (angle * 180/PI);
+  return (int) (angle * 180/PI);
 }
 
 //ensure only ever within the unit circle
@@ -35,34 +35,7 @@ float wrappedRadians360 (float angle)
 }
 
 //Angle between two vectors
-float getAngleRadians(float x, float y)
-{
-  if(x == 0)
-  {
-  	if(y >= 0)
-  	{
-  	  return (PI/2);
-  	}
-  	else
-  	{
-  	  return -(PI/2);
-  	}
-  }
-	float theta;
-	theta = atan(y/x);
-  if(x < 0)
-  {
-  	return (theta + PI);
-  }
-  if(y < 0)
-  {
-    return (theta + PI/2);
-  }
-  return theta;
-}
-
-//Angle between two vectors
-float getAngleDegrees(float x, float y)
+int getAngleDegrees(int x, int y)
 {
   if(x == 0)
   {
@@ -75,7 +48,7 @@ float getAngleDegrees(float x, float y)
   	  return -(90);
   	}
   }
-	float theta = getDegrees(atan(y/x));
+	int theta = getDegrees(atan(y/x));
   if(x < 0)
   {
   	return (theta + 180);
