@@ -13,8 +13,8 @@ float maxAssociationRadiusXY = 0.35;
 char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
 char mapCorrectionRateXY = 1;
 char mapCorrectionRateTheta = 1;
-const char numOfExperiences = 1; //main file
-const char numOfLinksPerExperience = 1; //assuming not many links between various experiences - this could be reduced
+const char numOfExperiences = 20; //main file
+const char numOfLinksPerExperience = 20; //assuming not many links between various experiences - this could be reduced
 
 //----Structs----//
 typedef struct
@@ -33,11 +33,6 @@ typedef struct
 
 typedef struct
 {
-  int localArray[18];
-} localViewCell;
-
-typedef struct
-{
 	//the id number of experience used for link stuff - will equal position in array - may not need this
 	int ID;
 	//where lies on map
@@ -45,7 +40,7 @@ typedef struct
   //in terms of odometry from encoders
 	vector3D odoPose;  //6bytes
   //in terms of pose cells
-	vector3DPose poseCellsPose; //3bytes
+	PoseCellPosition poseCellsPose; //3bytes
   //the local view for this experience
 	localViewCell localView; //72 bytes ---->total = 90
 	//holds the index for the experienceLink array for all experiences links for this experience to others

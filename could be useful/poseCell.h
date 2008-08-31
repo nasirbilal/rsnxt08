@@ -65,14 +65,6 @@ typedef struct {
 	PoseCellPosition maxActivatedCell;
 } PoseCellStructure;
 
-//holds the association between local view and pose cells
-typedef struct
-{
-	float localView[18];
-	char xCell;
-	char yCell;
-	char thetaCell;
-} poseCellAssociation;
 
 //initalise structures
 PoseCellStructure poseWorld;
@@ -80,7 +72,7 @@ matrixExcite excitation_Weights[3];
 matrixDistribution distribution[2];
 matrixPoseActivity tempPose[sizeX];
 PoseCellPosition position;
-poseCellAssociation poseAssoc[numLocalCells];
+
 
 //----Initialises functions----//
 void startCell();

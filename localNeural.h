@@ -18,6 +18,11 @@ int sixthUnit = 195;
 const char numLocalCells = 100; //number of possible views
 const char numNeuralUnits = 18; //number of neural units representing a view
 
+typedef struct
+{
+  float localArray[18];
+} localViewCell;
+
 
 //----Functions----//
 void clearTemp();

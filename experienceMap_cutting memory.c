@@ -8,8 +8,11 @@ int nextID = 0; //main file
 int nextLink = 0;//main file
 vector3D encoderData;
 vector3DPose maxActivatedCellPose;
-
-
+localViewCell localTempView;
+TFileHandle hFileHandle = 0;
+TFileIOResult nIoResult;
+short nFileSize = 1000;
+const string sFileName = "experiences.dat";
 
 void createNewExperience(experience &newE)
 {
@@ -22,7 +25,7 @@ void createNewExperience(experience &newE)
   memcpy(newE.inLinks,temp,10);
 	memcpy(newE.odoPose,encoderData,6);
 	memcpy(newE.poseCellsPose,maxActivatedCellPose,3);
-	memcpy(newE.localView,localTemp,72);
+	memcpy(newE.localView,localTempView,36);
 }
 
 //----Sets Outlinks and Inlinks----//
@@ -68,28 +71,22 @@ void linkLastToCurrent() //note:- trying char for now to try and cut memory prob
     memcpy(lastOdoPose,Map.experienceMap[Map.lastMatchedExperienceID].odoPose,6); //same as above
 
     //angle to current (angle = atan(y/x))
-    float angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
-    float translationAngle = lastOdoPose.theta - angleToCurrent;
+    int angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
+    int translationAngle = lastOdoPose.theta - angleToCurrent;
 
     //translation distance (in encoder clicks)
     int translationDistance = getLength((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
 
     //relative change in rotation
-    float rotation = getRotationDegrees(lastOdoPose.theta, currentOdoPose.theta);
+    int rotation = getRotationDegrees(lastOdoPose.theta, currentOdoPose.theta);
 
     //therefore has not been inserted onto experience map yet
     if(Map.currentExperience.mapPose.x == -1) //null statement
     {
-      vector3D lastMapPose;
-      vector3D newMapPose;
-      memcpy(lastMapPose, Map.experienceMap[Map.lastMatchedExperienceID].mapPose, 6);
-
-      float calcsAngle = lastMapPose.theta + translationAngle;
-      newMapPose.x = (lastMapPose.x + cosDegrees(calcsAngle) * translationDistance);
-      newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
-      newMapPose.theta = (lastMapPose.theta + rotation);
-      memcpy(Map.currentExperience.mapPose, newMapPose, 6); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 112); //put currentExperience on the map
+      int calcsAngle = Map.experienceMap[Map.lastMatchedExperienceID].mapPose.theta + translationAngle;
+      Map.currentExperience.mapPose.x = (Map.experienceMap[Map.lastMatchedExperienceID].mapPose.x + cosDegrees(calcsAngle) * translationDistance);
+      Map.currentExperience.mapPose.y = (Map.experienceMap[Map.lastMatchedExperienceID].mapPose.y + sinDegrees(calcsAngle) * translationDistance);
+      Map.currentExperience.mapPose.theta = (Map.experienceMap[Map.lastMatchedExperienceID].mapPose.theta + rotation);
     }
     char y;
     int linkNumber;
@@ -109,27 +106,22 @@ void linkLastToCurrent() //note:- trying char for now to try and cut memory prob
     if(linkNumber == -1)
     {
     	//create new link with all data needed
-      experienceLink link;
-    	link.startExperienceID = Map.lastMatchedExperienceID;
-    	link.endExperienceID = Map.currentExperience.ID;
-    	link.transitionTime = transitionTime;
-    	link.translationAngle = translationAngle;
-    	link.translationDistance = translationDistance;
-    	link.rotation = rotation;
-    	memcpy(links[nextLink],link,12);
+    	links[nextLink].startExperienceID = Map.lastMatchedExperienceID;
+    	links[nextLink].endExperienceID = Map.currentExperience.ID;
+    	links[nextLink].transitionTime = transitionTime;
+    	links[nextLink].translationAngle = translationAngle;
+    	links[nextLink].translationDistance = translationDistance;
+    	links[nextLink].rotation = rotation;
     	setOutlinks(nextLink, Map.experienceMap[Map.lastMatchedExperienceID],Map.experienceMap[Map.currentExperience.ID]); //sets the outlinks and inlinks
     	nextLink++; //increment new link
     }
     //else if link existes, update
     else
     {
-      experienceLink previous;
-      memcpy(previous,links[linkNumber],12);
-      previous.transitionTime = (previous.transitionTime + transitionTime) / 2;
-      previous.translationAngle = (previous.translationAngle + translationAngle) / 2;
-      previous.translationDistance = (previous.translationDistance + translationDistance) / 2;
-      previous.rotation = (previous.rotation + rotation) / 2;
-      memcpy(links[linkNumber], previous,12);
+      links[linkNumber].transitionTime = (links[linkNumber].transitionTime + transitionTime) / 2;
+      links[linkNumber].translationAngle = (links[linkNumber].translationAngle + translationAngle) / 2;
+      links[linkNumber].translationDistance = (links[linkNumber].translationDistance + translationDistance) / 2;
+      links[linkNumber].rotation = (links[linkNumber].rotation + rotation) / 2;
     }
   }
 
@@ -146,21 +138,13 @@ void linkExperience(experience &cExperience)
   Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
-
-//sets links --------------may need fixing
-void setLink(int startID, int endID)
-{
-  links[nextLink].startExperienceID = startID;
-  links[nextLink].endExperienceID = endID;
-}
-
 //----Compares arrays - this is due to RobotC unable to do this----//
 char compareArray(localViewCell &view1, localViewCell &view2)
 {
-	float array1[18], array2[18], nullArray[18];
-	memset(nullArray, 0, 72);
-	memcpy(array1, view1, 72);
-	memcpy(array2, view2, 72);
+	int array1[18], array2[18], nullArray[18];
+	memset(nullArray, 0, 36);
+	memcpy(array1, view1, 36);
+	memcpy(array2, view2, 36);
 
 	char x;
 	char check = 0;
@@ -246,7 +230,7 @@ int matchExperience(experience &matchE)
 //So far have used floats but as all structs use ints i may be able to get away with not using floats at all. Yay to the memory savings
 void mapCorrection()
 {
-	float mapCorrectionXY = mapCorrectionRateXY * 0.5;
+	float mapCorrectionXY = mapCorrectionRateXY * 0.5; //could set this at start to be 0.5 and save maybe
 	float mapCorrectionTheta = mapCorrectionRateTheta * 0.5;
 
 	experience startExperience;
@@ -270,22 +254,22 @@ void mapCorrection()
         memcpy(endPose, endExperience.mapPose, 6);
 
         //expected position of the end experience
-        float angleToTargetEnd = startPose.theta + link.translationAngle;
-        float targetEndX = startPose.x + link.translationDistance * cosDegrees(angleToTargetEnd);
-        float targetEndY = startPose.y + link.translationDistance * sinDegrees(angleToTargetEnd);
+        int angleToTargetEnd = startPose.theta + link.translationAngle;
+        int targetEndX = startPose.x + link.translationDistance * cosDegrees(angleToTargetEnd);
+        int targetEndY = startPose.y + link.translationDistance * sinDegrees(angleToTargetEnd);
 
         //expected orientation of the end experience
-        float targetEndAngle = startPose.theta + link.rotation;
+        int targetEndAngle = startPose.theta + link.rotation;
 
         //Calulate the 'error' between expected and actual position of end experience
-        float xError = targetEndX - endPose.x;
-        float yError = targetEndY - endPose.y;
-        float thetaError = getRotationDegrees(endPose.theta,targetEndAngle);
+        int xError = targetEndX - endPose.x;
+        int yError = targetEndY - endPose.y;
+        int thetaError = getRotationDegrees(endPose.theta,targetEndAngle);
 
         //calculate the adjustment to be made for start and end poses
-        float xAdjustment = xError * mapCorrectionXY;
-        float yAdjustment = yError * mapCorrectionXY;
-        float thetaAdjustment = thetaError * mapCorrectionTheta;
+        int xAdjustment = xError * mapCorrectionXY;
+        int yAdjustment = yError * mapCorrectionXY;
+        int thetaAdjustment = thetaError * mapCorrectionTheta;
 
         //Apply adjustments then copy back over previous experiences
         startPose.x -= xAdjustment;
@@ -351,7 +335,9 @@ void initaliseMap()
 	Map.lastMatchedExperienceID = -1;
 	memset(Links,0,60);
   memset(encoderData,0,6);
-  memset(maxActivatedCellPose,0,6);
+  memset(maxActivatedCellPose,0,3);
+  memset(localTempView,0,35);
+  Delete(sfilename, nIoResult);
 }
 /*
 void writeExperiences()
@@ -420,5 +406,47 @@ void writeExperiences()
 	Close(hFileHandle, nIoResult);
 
 
+
+}
+*/
+task main()
+{//testing time bitch
+  initaliseMap();
+  encoderData.x = 0;
+  encoderData.y = 0;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 5;
+  maxActivatedCellPose.y = 5;
+  maxActivatedCellPose.theta = 0;
+  int tempArray[18] = {50,50,0,0,0,0,50,50,0,0,0,0,50,50,0,0,0,0};
+  memcpy(localTempView,tempArray,36);
+  startUp();
+  encoderData.x = 100;
+  encoderData.y = 100;
+  encoderData.theta = 20;
+  maxActivatedCellPose.x = 6;
+  maxActivatedCellPose.y = 5;
+  maxActivatedCellPose.theta = 0;
+  int tempArray2[18] = {60,40,0,0,0,0,50,50,0,0,0,0,50,50,0,0,0,0};
+  memcpy(localTempView, tempArray2, 36);
+  iterateMap(1);
+  encoderData.x = 200;
+  encoderData.y = 200;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 7;
+  maxActivatedCellPose.y = 6;
+  maxActivatedCellPose.theta = 0;
+  int tempArray3[18] = {40,40,0,0,0,0,40,40,0,0,0,0,40,40,0,0,0,0};
+  memcpy(localTempView, tempArray3, 36);
+  iterateMap(1);
+  encoderData.x = 300;
+  encoderData.y = 300;
+  encoderData.theta = 0;
+  maxActivatedCellPose.x = 8;
+  maxActivatedCellPose.y = 7;
+  maxActivatedCellPose.theta = 0;
+  int tempArray4[18] = {30,70,0,0,0,0,60,40,0,0,0,0,30,70,0,0,0,0};
+  memcpy(localTempView, tempArray4, 36);
+  iterateMap(1);
 
 }

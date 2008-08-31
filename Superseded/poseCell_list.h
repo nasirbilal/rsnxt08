@@ -13,26 +13,17 @@ const char sizeX = 10; //number of cells in X dimension
 const char sizeY = 10; //number of cells in Y dimension
 const char sizeTheta = 6; //number of cells in theta dimension
 
-char startActivation = 50; //the starting activation of the first cell
+float startActivation = 0.5; //the starting activation of the first cell
 char influenceXY = 1; // the level of influence that cells have on neighbouring cells
 char influenceTheta = 1;
 float weightVarianceXY = 0.8;//for gaussian distribution stuff
 float weightVarianceTheta = 0.5;//for gaussian distribution stuff
 char weightScaleFactor = 14; //strength of influence between cells
 float stepSize = 0.2; //this is to account for something
-float globalInhibition = 1.4;//0.014
+float globalInhibition = 0.014;//0.014
 char poseEstimationRadius = 6;
 float injectionStrength = 0.075;
-int numberOfCells = 2*sizeTheta*sizeX*sizeY;
-
-char fiftyPercent[36] = {0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,0};
-char seventyFivePercent[36] = {1,1,0,1,1,1,1,1,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,0,1,1,1,1,0,1,1};
-char twentyfivePercent[36] = {0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0};
-char fifteenPercent[36] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0};
-char thirtyThreePercent[36] = {0,0,0,0,1,0,0,1,0,1,0,0,0,0,1,0,1,0,0,1,0,1,0,1,1,0,1,0,0,0,0,1,0,1,0,0};
-char sixtySevenPercent[36] = {1,1,0,1,1,1,1,0,1,0,1,0,0,1,1,1,0,1,1,0,1,1,1,0,0,1,0,1,0,1,1,1,1,0,1,1};
-char eightyFivePercent[36] = {1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,1};
-char twoPercent[36] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+const int listLength = 200;
 
 
 //----Structures - mainly 3D arrays----//
@@ -44,10 +35,13 @@ typedef struct {
 	char theta;
 } PoseCellPosition;
 
-//matrix used for holding pose activity
 typedef struct {
-	float array2D[sizeY][sizeTheta]; //using an array of structures to create [][][]
-} matrixPoseActivity;
+  char x;
+	char y;
+	char theta;
+	float cellActivation;
+} poseCell;
+
 
 //matrix that holds data for the excitation matrix
 typedef struct {
@@ -61,15 +55,17 @@ typedef struct {
 
 //the pose environment
 typedef struct {
-	matrixPoseActivity poseActivity[sizeX];
+	poseCell poseListOne[listLength];
+  poseCell poseListTwo[listLength];
 	PoseCellPosition maxActivatedCell;
+	float maxCellActivation;
 } PoseCellStructure;
+
 
 //initalise structures
 PoseCellStructure poseWorld;
 matrixExcite excitation_Weights[3];
 matrixDistribution distribution[2];
-matrixPoseActivity tempPose[sizeX];
 PoseCellPosition position;
 
 

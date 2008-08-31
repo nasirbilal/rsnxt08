@@ -27,7 +27,7 @@ int changeTheta = 0;
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 int clicks = 180;
 int totalClicks = 0;
-int numberOfCells = 2400;
+
 
 //                           //
 //----Pose Cell Functions----//
@@ -39,49 +39,49 @@ void startCell()
   poseWorld.maxActivatedCell.x = 5;
   poseWorld.maxActivatedCell.y = 5;
   poseWorld.maxActivatedCell.theta = 0;
-  poseWorld.poseActivity[5].array2D[5][0] = startActivation;
+  poseWorld.poseActivity[5].array2D[5][0] = 50;
 }
 
 //----initalises all pose cells as inactive and sets all pose activity to zero----//
 void setupPoseStructure()
 {
-  memset(tempPose, 0, 2400);
-  memset(poseWorld,0,2403);
+  memset(tempPose, 0, 1200);
+  memset(poseWorld,0, 1203);
 }
 
 //----Excitation matrix----//
 void excitationMatrixSetup()
 {
 	//done in matlab - probably should check if right
-  excitation_Weights[0].array2D[0][0] =  0.0495;
-  excitation_Weights[0].array2D[0][1] =  0.3655;
-  excitation_Weights[0].array2D[0][2] =  0.0495;
-  excitation_Weights[0].array2D[1][0] =  0.1727;
-  excitation_Weights[0].array2D[1][1] =  1.2757;
-  excitation_Weights[0].array2D[1][2] =  0.1727;
-  excitation_Weights[0].array2D[2][0] =  0.0495;
-  excitation_Weights[0].array2D[2][1] =  0.3655;
-  excitation_Weights[0].array2D[2][2] =  0.0495;
+  excitation_Weights[0].array2D[0][0] =  4.95;
+  excitation_Weights[0].array2D[0][1] =  36.55;
+  excitation_Weights[0].array2D[0][2] =  4.95;
+  excitation_Weights[0].array2D[1][0] =  17.27;
+  excitation_Weights[0].array2D[1][1] =  127.57;
+  excitation_Weights[0].array2D[1][2] =  17.27;
+  excitation_Weights[0].array2D[2][0] =  4.95;
+  excitation_Weights[0].array2D[2][1] =  36.55;
+  excitation_Weights[0].array2D[2][2] =  4.95;
 
-  excitation_Weights[1].array2D[0][0] =  0.1727;
-  excitation_Weights[1].array2D[0][1] =  1.2757;
-  excitation_Weights[1].array2D[0][2] =  0.1727;
-  excitation_Weights[1].array2D[1][0] =  0.6026;
-  excitation_Weights[1].array2D[1][1] =  4.4528;
-  excitation_Weights[1].array2D[1][2] =  0.6026;
-  excitation_Weights[1].array2D[2][0] =  0.1727;
-  excitation_Weights[1].array2D[2][1] =  1.2757;
-  excitation_Weights[1].array2D[2][2] =  0.1727;
+  excitation_Weights[1].array2D[0][0] =  17.27;
+  excitation_Weights[1].array2D[0][1] =  127.57;
+  excitation_Weights[1].array2D[0][2] =  17.27;
+  excitation_Weights[1].array2D[1][0] =  60.26;
+  excitation_Weights[1].array2D[1][1] =  445.28;
+  excitation_Weights[1].array2D[1][2] =  60.26;
+  excitation_Weights[1].array2D[2][0] =  17.27;
+  excitation_Weights[1].array2D[2][1] =  127.57;
+  excitation_Weights[1].array2D[2][2] =  17.27;
 
-  excitation_Weights[2].array2D[0][0] =  0.0495;
-  excitation_Weights[2].array2D[0][1] =  0.3655;
-  excitation_Weights[2].array2D[0][2] =  0.0495;
-  excitation_Weights[2].array2D[1][0] =  0.1727;
-  excitation_Weights[2].array2D[1][1] =  1.2757;
-  excitation_Weights[2].array2D[1][2] =  0.1727;
-  excitation_Weights[2].array2D[2][0] =  0.0495;
-  excitation_Weights[2].array2D[2][1] =  0.3655;
-  excitation_Weights[2].array2D[2][2] =  0.0495;
+  excitation_Weights[2].array2D[0][0] =  4.95;
+  excitation_Weights[2].array2D[0][1] =  36.55;
+  excitation_Weights[2].array2D[0][2] =  4.95;
+  excitation_Weights[2].array2D[1][0] =  17.27;
+  excitation_Weights[2].array2D[1][1] =  127.57;
+  excitation_Weights[2].array2D[1][2] =  17.27;
+  excitation_Weights[2].array2D[2][0] =  4.95;
+  excitation_Weights[2].array2D[2][1] =  36.55;
+  excitation_Weights[2].array2D[2][2] =  4.95;
 }
 
 //----Clears Encoders - used to ensure correct rotation angles----//
@@ -183,10 +183,15 @@ void setActivation(char cellX, char cellY, char cellTheta, float activation)
 {
 	float previousActivation; //previous activation of a cell
 	float maxActivation; //activation of max axtivated cell
+	char maxX;  //co-ordinates of max activated cell
+	char maxY;
+	char maxTheta;
 
 	//set values
   previousActivation = poseWorld.poseActivity[cellX].array2D[cellY][cellTheta];
-
+  maxX = poseWorld.maxActivatedCell.x;
+  maxY = poseWorld.maxActivatedCell.y;
+  maxTheta = poseWorld.maxActivatedCell.theta;
   maxActivation = poseWorld.poseActivity[maxX].array2D[maxY][maxTheta];
 
   if(previousActivation == activation)
@@ -309,7 +314,7 @@ void doNormalisation(float activationSum)
       {
         if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if active
         {
-        	poseWorld.poseActivity[i].array2D[j][k] = poseWorld.poseActivity[i].array2D[j][k] / activationSum; //normalise
+        	poseWorld.poseActivity[i].array2D[j][k] = (100*(poseWorld.poseActivity[i].array2D[j][k] / activationSum)); //normalise
         }
       }
     }
@@ -497,7 +502,7 @@ task main ()
 		alive(); //stop NXT from sleeping
     totalClicks += clicks;
     //drive(-100,190,50);
-    drive(50,180,50);
+   // drive(50,180,50);
 
     pose3D(changeTheta,0.5);
 

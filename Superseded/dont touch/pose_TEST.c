@@ -183,10 +183,15 @@ void setActivation(char cellX, char cellY, char cellTheta, float activation)
 {
 	float previousActivation; //previous activation of a cell
 	float maxActivation; //activation of max axtivated cell
+	char maxX;  //co-ordinates of max activated cell
+	char maxY;
+	char maxTheta;
 
 	//set values
   previousActivation = poseWorld.poseActivity[cellX].array2D[cellY][cellTheta];
-
+  maxX = poseWorld.maxActivatedCell.x;
+  maxY = poseWorld.maxActivatedCell.y;
+  maxTheta = poseWorld.maxActivatedCell.theta;
   maxActivation = poseWorld.poseActivity[maxX].array2D[maxY][maxTheta];
 
   if(previousActivation == activation)
