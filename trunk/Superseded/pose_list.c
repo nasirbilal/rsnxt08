@@ -37,11 +37,11 @@ char read = 1;//determines which list is being written to and which is being rea
 
 /*
 / Things to do.
-| 1) determine in the nextEmptyCell should be clearing somewhere and recounted - possibly after inhibition
-| 2) determine where to set the appropriate list to all ones (therefore empty) -probably in pose3D just check which is the write one to clear
+| 1)
+| 2)
 | 3) test
 \ 4) see if 200 is big enough list size - could be heaps of cells active b4 inhibition kicks in
-|
+| 5) test binary search with the sorted list and test more with the list sorter - then test entire thing - then test with the visual display
 |
 |
 \
@@ -62,7 +62,7 @@ void changeRead()
 {
   if(read)
   {
-  	read = 0;
+    read = 0;
   }
   else
   {
@@ -71,53 +71,187 @@ void changeRead()
 
 }
 
+//----Clear Lists----//
+void clear_One()
+{
+  memset(poseWorld.poseListOne,0, 7*listLength);
+	listOneActive = 0;
+	nextEmptyCell = 0;
+}
+
+void clear_Two()
+{
+	memset(poseWorld.poseListTwo,0, 7*listLength);
+	listTwoActive = 0;
+	nextEmptyCell = 0;
+}
+
+//----Binary search----//
+int binarySearchListOne(char xSearch, char ySearch, char thetaSearch)
+{
+       int low = 0;
+       int high = listOneActive - 1;
+       while (low <= high)
+       {
+          int mid = (int) (low + ((high - low) / 2));
+          if (poseWorld.poseListOne[mid].x > xSearch)
+          {
+            high = mid - 1;
+          }
+          else if (poseWorld.poseListOne[mid].x < xSearch)
+          {
+            low = mid + 1;
+          }
+          else
+          {
+	          if (poseWorld.poseListOne[mid].y > ySearch)
+	          {
+	            high = mid - 1;
+	          }
+	          else if (poseWorld.poseListOne[mid].y < ySearch)
+	          {
+	            low = mid + 1;
+	          }
+          	else
+          	{
+		          if (poseWorld.poseListOne[mid].theta > thetaSearch)
+		          {
+		            high = mid - 1;
+		          }
+		          else if (poseWorld.poseListOne[mid].theta < thetaSearch)
+		          {
+		            low = mid + 1;
+		          }
+		          else
+		          {
+		            return mid;
+		          }
+          	}
+          }
+       }
+       return -1; // not found
+}
+
+int binarySearchListTwo(char xSearch, char ySearch, char thetaSearch)
+{
+       int low = 0;
+       int high = listTwoActive - 1;
+       while (low <= high)
+       {
+          int mid = (int) (low + ((high - low) / 2));
+          if (poseWorld.poseListTwo[mid].x > xSearch)
+          {
+            high = mid - 1;
+          }
+          else if (poseWorld.poseListTwo[mid].x < xSearch)
+          {
+            low = mid + 1;
+          }
+          else
+          {
+	          if (poseWorld.poseListTwo[mid].y > ySearch)
+	          {
+	            high = mid - 1;
+	          }
+	          else if (poseWorld.poseListTwo[mid].y < ySearch)
+	          {
+	            low = mid + 1;
+	          }
+          	else
+          	{
+		          if (poseWorld.poseListTwo[mid].theta > thetaSearch)
+		          {
+		            high = mid - 1;
+		          }
+		          else if (poseWorld.poseListTwo[mid].theta < thetaSearch)
+		          {
+		            low = mid + 1;
+		          }
+		          else
+		          {
+		            return mid;
+		          }
+          	}
+          }
+       }
+       return -1; // not found
+}
 
 //----searches list for same cell previously added----//
 int searchList(char xSearch, char ySearch, char thetaSearch)
 {
-	int lVar;
   if(read)
   {
-	  for(lVar = 0; lVar < listTwoActive; lVar++)
+    return binarySearchListTwo(xSearch, ySearch, thetaSearch);
+  }
+  else
+  {
+    return binarySearchListOne(xSearch, ySearch, thetaSearch);
+  }
+
+}
+/*int searchList(char xSearch, char ySearch, char thetaSearch)
+{
+  int lVar;
+  if(read)
+  {
+    for(lVar = 0; lVar < listTwoActive; lVar++)
     {
-    	if(poseWorld.poseListTwo[lVar].x == xSearch)
-    	{
-    	  if(poseWorld.poseListTwo[lVar].y == ySearch)
-    		{
-    		  if(poseWorld.poseListTwo[lVar].theta == thetaSearch)
-    		  {
-    		    return lVar;
-    		  }
-    		}
-     	}
+      if(poseWorld.poseListTwo[lVar].x == xSearch)
+      {
+        if(poseWorld.poseListTwo[lVar].y == ySearch)
+        {
+          if(poseWorld.poseListTwo[lVar].theta == thetaSearch)
+          {
+            return lVar;
+          }
+        }
+      }
     }
   return -1;
   }
   else
   {
-	  for(lVar = 0; lVar < listOneActive; lVar++)
+    for(lVar = 0; lVar < listOneActive; lVar++)
     {
-    	if(poseWorld.poseListOne[lVar].x == xSearch)
-    	{
-    	  if(poseWorld.poseListOne[lVar].y == ySearch)
-    		{
-    		  if(poseWorld.poseListOne[lVar].theta == thetaSearch)
-    		  {
-    		    return lVar;
-    		  }
-    		}
-     	}
+      if(poseWorld.poseListOne[lVar].x == xSearch)
+      {
+        if(poseWorld.poseListOne[lVar].y == ySearch)
+        {
+          if(poseWorld.poseListOne[lVar].theta == thetaSearch)
+          {
+            return lVar;
+          }
+        }
+      }
     }
   return -1;
   }
-}
+}*/
 
 
 void findMax()
 {
-	float max = 0;
+  float max = 0;
   int maxX, maxY, maxTheta, loopCount;
   if(read)
+  {
+    for(loopCount = 0; loopCount < listOneActive; loopCount++)
+    {
+      if(poseWorld.poseListOne[loopCount].cellActivation > max)
+      {
+        max = poseWorld.poseListOne[loopCount].cellActivation;
+        maxX = poseWorld.poseListOne[loopCount].x;
+        maxY = poseWorld.poseListOne[loopCount].y;
+        maxTheta = poseWorld.poseListOne[loopCount].theta;
+      }
+    }
+    poseWorld.maxActivatedCell.x = maxX;
+    poseWorld.maxActivatedCell.y = maxY;
+    poseWorld.maxActivatedCell.theta = maxTheta;
+    poseWorld.maxCellActivation = max;
+  }
+  else
   {
     for(loopCount = 0; loopCount < listTwoActive; loopCount++)
     {
@@ -132,24 +266,7 @@ void findMax()
     poseWorld.maxActivatedCell.x = maxX;
     poseWorld.maxActivatedCell.y = maxY;
     poseWorld.maxActivatedCell.theta = maxTheta;
-    poseWorld.maxActivatedCell = max;
-  }
-  else
-  {
-  	for(loopCount = 0; loopCount < listOneActive; loopCount++)
-    {
-      if(poseWorld.poseListOne[loopCount].cellActivation > max)
-      {
-        max = poseWorld.poseListOne[loopCount].cellActivation;
-        maxX = poseWorld.poseListOne[loopCount].x;
-        maxY = poseWorld.poseListOne[loopCount].y;
-        maxTheta = poseWorld.poseListOne[loopCount].theta;
-      }
-    }
-    poseWorld.maxActivatedCell.x = maxX;
-    poseWorld.maxActivatedCell.y = maxY;
-    poseWorld.maxActivatedCell.theta = maxTheta;
-    poseWorld.maxActivatedCell = max;
+    poseWorld.maxCellActivation = max;
   }
 }
 
@@ -179,7 +296,7 @@ void addToList(char xAdd, char yAdd, char thetaAdd, float actAdd)
   }
   else
   {
-  	if(read)
+    if(read)
     {
       poseWorld.poseListTwo[searchRes].cellActivation = actAdd;
     }
@@ -198,14 +315,6 @@ void addToStartList(char xAdd, char yAdd, char thetaAdd, float actAdd)
       poseWorld.poseListOne[nextEmptyCell].theta = thetaAdd;
       poseWorld.poseListOne[nextEmptyCell].cellActivation = actAdd;
       listOneActive++;
-
-      poseWorld.poseListTwo[nextEmptyCell].x = xAdd;
-      poseWorld.poseListTwo[nextEmptyCell].y = yAdd;
-      poseWorld.poseListTwo[nextEmptyCell].theta = thetaAdd;
-      poseWorld.poseListTwo[nextEmptyCell].cellActivation = actAdd;
-      listTwoActive++;
-
-      nextEmptyCell++;
 }
 
 //----adds cells only to the write list (only use in setExcitation)----//
@@ -234,7 +343,7 @@ void addToWriteList(char xAdd, char yAdd, char thetaAdd, float actAdd)
   }
   else
   {
-  	if(read)
+    if(read)
     {
       poseWorld.poseListTwo[searchRes].cellActivation += actAdd;
     }
@@ -255,18 +364,18 @@ void shell_sortListOne() {
   {
     for (i = increment; i < listOneActive; i++) {
       j = i;
-      memcpy(temp, poseWorld.poseListOne[i],7);
+      memcpy(temp, poseWorld.poseListOne[i],8);
 
       while((j >= increment) && (poseWorld.poseListOne[j-increment].x > temp.x))
       {
-        memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],7);
+        memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],8);
         j = j - increment;
       }
       while((j >= increment) && (poseWorld.poseListOne[j-increment].x == temp.x))
       {
         if((poseWorld.poseListOne[j-increment].y > temp.y))
         {
-      	  memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],7);
+          memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],8);
           j = j - increment;
         }
         else {break;}
@@ -275,12 +384,12 @@ void shell_sortListOne() {
       {
         if((poseWorld.poseListOne[j-increment].y == temp.y) && (poseWorld.poseListOne[j-increment].theta > temp.theta))
         {
-      	  memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],7);
+          memcpy(poseWorld.poseListOne[j],poseWorld.poseListOne[j-increment],8);
           j = j - increment;
         }
         else {break;}
       }
-      memcpy(poseWorld.poseListOne[j],temp,7);
+      memcpy(poseWorld.poseListOne[j],temp,8);
     }
 
     if (increment == 2)
@@ -294,23 +403,22 @@ void shell_sortListTwo() {
   int i, j, increment;
   poseCell temp;
   increment = (int) listTwoActive / 2;
-
   while (increment > 0)
   {
     for (i = increment; i < listTwoActive; i++) {
       j = i;
-      memcpy(temp, poseWorld.poseListTwo[i],7);
+      memcpy(temp, poseWorld.poseListTwo[i],8);
 
       while((j >= increment) && (poseWorld.poseListTwo[j-increment].x > temp.x))
       {
-        memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],7);
+        memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],8);
         j = j - increment;
       }
       while((j >= increment) && (poseWorld.poseListTwo[j-increment].x == temp.x))
       {
         if((poseWorld.poseListTwo[j-increment].y > temp.y))
         {
-      	  memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],7);
+          memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],8);
           j = j - increment;
         }
         else {break;}
@@ -319,12 +427,12 @@ void shell_sortListTwo() {
       {
         if((poseWorld.poseListTwo[j-increment].y == temp.y) && (poseWorld.poseListTwo[j-increment].theta > temp.theta))
         {
-      	  memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],7);
+          memcpy(poseWorld.poseListTwo[j],poseWorld.poseListTwo[j-increment],8);
           j = j - increment;
         }
         else {break;}
       }
-      memcpy(poseWorld.poseListTwo[j],temp,7);
+      memcpy(poseWorld.poseListTwo[j],temp,8);
     }
 
     if (increment == 2)
@@ -334,7 +442,18 @@ void shell_sortListTwo() {
   }
 }
 
+void sortList()
+{
+	if(read)
+  {
+    shell_sortListTwo();
+  }
+  else
+  {
+    shell_sortListOne();
+  }
 
+}
 
 //----initialises the start cell and sets starting activation----//
 void startCell()
@@ -356,7 +475,7 @@ void setupPoseStructure()
 //----Excitation matrix----//
 void excitationMatrixSetup()
 {
-	//done in matlab - probably should check if right
+  //done in matlab - probably should check if right
   excitation_Weights[0].array2D[0][0] =  0.0495;
   excitation_Weights[0].array2D[0][1] =  0.3655;
   excitation_Weights[0].array2D[0][2] =  0.0495;
@@ -391,9 +510,9 @@ void excitationMatrixSetup()
 //----Clears Encoders - used to ensure correct rotation angles----//
 void clearEncoders()
 {
-	//have to unsynch motors as when clearing the master the slave wont clear and attempting to clear
-	//the slave causes an error
-	nSyncedMotors = synchNone;
+  //have to unsynch motors as when clearing the master the slave wont clear and attempting to clear
+  //the slave causes an error
+  nSyncedMotors = synchNone;
   nMotorEncoder[motorC] = 0;
   nMotorEncoder[motorB] = 0;
 }
@@ -401,40 +520,40 @@ void clearEncoders()
 //----Determine rotation of robot from encoder values----//
 int getRotation()
 {
-	float motorBCount = nMotorEncoder[motorB];
-	float motorCCount = nMotorEncoder[motorC];
-	motorBCount /= 190; //distance between wheels in encoder clicks
-	motorCCount /= 190;
-	int thetaOne;
-	int thetaTwo;
-	int thetaThree;
-	if(motorBCount<0)
-	{
-	  motorBCount *= -1;
-	  thetaOne = radiansToDegrees(atan(motorBCount));
-	  thetaTwo = radiansToDegrees(atan(motorCCount));
+  float motorBCount = nMotorEncoder[motorB];
+  float motorCCount = nMotorEncoder[motorC];
+  motorBCount /= 190; //distance between wheels in encoder clicks
+  motorCCount /= 190;
+  int thetaOne;
+  int thetaTwo;
+  int thetaThree;
+  if(motorBCount<0)
+  {
+    motorBCount *= -1;
+    thetaOne = radiansToDegrees(atan(motorBCount));
+    thetaTwo = radiansToDegrees(atan(motorCCount));
     return -(thetaOne + thetaTwo);
-	}
-	else if(motorCCount<0)
-	{
+  }
+  else if(motorCCount<0)
+  {
     motorCCount *= -1;
-	  thetaOne = radiansToDegrees(atan(motorBCount));
-	  thetaTwo = radiansToDegrees(atan(motorCCount));
-	  return (thetaOne + thetaTwo);
+    thetaOne = radiansToDegrees(atan(motorBCount));
+    thetaTwo = radiansToDegrees(atan(motorCCount));
+    return (thetaOne + thetaTwo);
   }
   else if(motorCCount < 0 && motorBCount < 0)
   {
-  	motorBCount *= -1;
-  	motorCCount *= -1;
-  	thetaOne = radiansToDegrees(atan(motorBCount));
-	  thetaTwo = radiansToDegrees(atan(motorCCount));
-	  return (thetaOne + thetaTwo);
+    motorBCount *= -1;
+    motorCCount *= -1;
+    thetaOne = radiansToDegrees(atan(motorBCount));
+    thetaTwo = radiansToDegrees(atan(motorCCount));
+    return (thetaOne + thetaTwo);
   }
   else
   {
-  	thetaOne = radiansToDegrees(atan(motorBCount));
-	  thetaTwo = radiansToDegrees(atan(motorCCount));
-	  return (thetaOne + thetaTwo);
+    thetaOne = radiansToDegrees(atan(motorBCount));
+    thetaTwo = radiansToDegrees(atan(motorCCount));
+    return (thetaOne + thetaTwo);
   }
   return thetaThree;
 }
@@ -485,11 +604,11 @@ char getWrappedTheta(char indexTheta)
 //----Sets activation in cell and handles maximum cell----//
 void setActivation(char cellX, char cellY, char cellTheta, float activation)
 {
-	float previousActivation; //previous activation of a cell
-	float maxActivation; //activation of max axtivated cell
+  float previousActivation; //previous activation of a cell
+  float maxActivation; //activation of max axtivated cell
   int searchRes;
 
-	//set values
+  //set values
   searchRes = searchList(cellX, cellY, cellTheta);
   if(searchRes == -1)
   {
@@ -497,14 +616,14 @@ void setActivation(char cellX, char cellY, char cellTheta, float activation)
   }
   else
   {
-  	if(read)
-  	{
-  	  previousActivation = poseWorld.poseListTwo[searchRes];
-  	}
-  	else
-  	{
-  		previousActivation = poseWorld.poseListOne[searchRes];
-  	}
+    if(read)
+    {
+      previousActivation = poseWorld.poseListTwo[searchRes];
+    }
+    else
+    {
+      previousActivation = poseWorld.poseListOne[searchRes];
+    }
   }
 
   maxActivation = poseWorld.maxCellActivation;
@@ -545,9 +664,10 @@ void doExcitation(float stepSize)
   //
   if(read)
   {
+  	clear_Two();
     for(i = 0; i < listOneActive; i++)
     {
-   	  float thisActivation = poseWorld.poseListOne[i].cellActivation;
+      float thisActivation = poseWorld.poseListOne[i].cellActivation;
       for (relX = -influenceXY; relX <= influenceXY; relX++)
       {
         char neighbourX = getWrappedX(poseWorld.poseListOne[i].x + relX);
@@ -558,17 +678,22 @@ void doExcitation(float stepSize)
           {
             char neighbourTheta = getWrappedTheta(poseWorld.poseListOne[i].theta + relTheta);
             excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-            addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+            if((thisActivation * excitationWeight * stepSize)>0)
+            {
+              addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+            }
           }
         }
       }
+      sortList();
     }
   }
   else
   {
+  	clear_One();
     for(i = 0; i < listTwoActive; i++)
     {
-   	  float thisActivation = poseWorld.poseListTwo[i].cellActivation;
+      float thisActivation = poseWorld.poseListTwo[i].cellActivation;
       for (relX = -influenceXY; relX <= influenceXY; relX++)
       {
         char neighbourX = getWrappedX(poseWorld.poseListOne[i].x + relX);
@@ -579,10 +704,14 @@ void doExcitation(float stepSize)
           {
             char neighbourTheta = getWrappedTheta(poseWorld.poseListOne[i].theta + relTheta);
             excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-            addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+            if((thisActivation * excitationWeight * stepSize)>0)
+            {
+              addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+            }
           }
         }
       }
+      sortList();
     }
   }
 
@@ -591,7 +720,7 @@ void doExcitation(float stepSize)
 //----Inhibits neighbouring cells----//
 float doInhibition(float stepSize)
 {
-	float inhibition = globalInhibition * stepSize;
+  float inhibition = globalInhibition * stepSize;
   float activationSum = 0;
   float activation;
   numActive = 0; //clear number of active cells counter
@@ -601,47 +730,51 @@ float doInhibition(float stepSize)
 
   if(read)
   {
-  	memset(poseWorld.poseListOne, 0, 7*listLength);
-  	listOneActive=0;
-  	nextEmptyCell = 0;
+    clear_One();
+    changeRead();
     for(i = 0; i < listTwoActive; i++)
     {
-    	activation = poseWorld.poseListTwo[i].cellActivation - inhibition;
+      activation = poseWorld.poseListTwo[i].cellActivation - inhibition;
       if(activation <=0)
       {
        activation = 0; //cant have negative activity
       }
-      setActivation(poseWorld.poseListTwo[i].x, poseWorld.poseListTwo[i].y, poseWorld.poseListTwo[i].theta, activation); //set activation and see if is maximum
-      activationSum += activation;
+      //setActivation(poseWorld.poseListTwo[i].x, poseWorld.poseListTwo[i].y, poseWorld.poseListTwo[i].theta, activation); //set activation and see if is maximum
+
+      //poseWorld.poseListTwo[i].cellActivation = activation;
       if(activation>0)
       {
-       numActive++; //increase number of active cells
+        addToList(poseWorld.poseListTwo[i].x,poseWorld.poseListTwo[i].y,poseWorld.poseListTwo[i].theta,activation);
+        numActive++; //increase number of active cells
+        activationSum += activation;
       }
     }
   }
   else
   {
-  	memset(poseWorld.poseListTwo, 0, 7*listLength);
-  	listTwoActive=0;
-  	nextEmptyCell = 0;
+    clear_Two();
+    changeRead();
     for(i = 0; i < listOneActive; i++)
     {
-    	activation = poseWorld.poseListOne[i].cellActivation - inhibition;
+      activation = poseWorld.poseListOne[i].cellActivation - inhibition;
       if(activation <=0)
       {
        activation = 0; //cant have negative activity
       }
-      setActivation(poseWorld.poseListOne[i].x, poseWorld.poseListOne[i].y, poseWorld.poseListOne[i].theta, activation); //set activation and see if is maximum
-      activationSum += activation;
+      //setActivation(poseWorld.poseListTwo[i].x, poseWorld.poseListTwo[i].y, poseWorld.poseListTwo[i].theta, activation); //set activation and see if is maximum
+
+      //poseWorld.poseListTwo[i].cellActivation = activation;
       if(activation>0)
       {
-       numActive++; //increase number of active cells
+        addToList(poseWorld.poseListTwo[i].x,poseWorld.poseListTwo[i].y,poseWorld.poseListTwo[i].theta,activation);
+        numActive++; //increase number of active cells
+        activationSum += activation;
       }
     }
   }
   changeRead();
-  nextEmptyCell=numActive;
   findMax();
+  nextEmptyCell=numActive;
   return activationSum;
 }
 
@@ -650,19 +783,19 @@ void doNormalisation(float activationSum)
 {//requires activationSum from inhibition
 
   //initalise loop variables
-	int i;
+  int i;
   if(read)
   {
-    for(i = 0; i < listTwoActive; i++)
+    for(i = 0; i < listOneActive; i++)
     {
-    	poseWorld.poseListTwo[i].cellActivation /= activationSum; //normalise
+      poseWorld.poseListOne[i].cellActivation /= activationSum; //normalise
     }
   }
   else
   {
-    for(i = 0; i < listOneActive; i++)
+    for(i = 0; i < listTwoActive; i++)
     {
-    	poseWorld.poseListOne[i].cellActivation /= activationSum; //normalise
+      poseWorld.poseListTwo[i].cellActivation /= activationSum; //normalise
     }
   }
   findMax();
@@ -701,31 +834,31 @@ void getActivationDistribution(float offsetX, float offsetY, float offsetTheta)
 }
 
 //----Shifts the activity in the pose structure----//
-void pathIntegrateCell(char xp, char yp, char thetap, float deltaTheta, float translation)
+void pathIntegrateCell(int listCellNum, char xp, char yp, char thetap, float deltaTheta, float translation)
 {
   //initialise loop variables
-	char relativeX;
-	char relativeY;
-	char relativeTheta;
+  char relativeX;
+  char relativeY;
+  char relativeTheta;
 
-	char x;
-	char y;
-	char theta;
+  char x;
+  char y;
+  char theta;
 
-	float activation;
-	int searchRes = searchList(xp,yp,thetap);
-	if(read)
-	{
-		activation = poseWorld.poseListTwo[searchRes].cellActivation;
-	}
-	else
-	{
-		activation = poseWorld.poseListOne[searchRes].cellActivation;
-	}
+  float activation;
 
-	float deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
+  if(read)
+  {
+    activation = poseWorld.poseListTwo[listCellNum].cellActivation;
+  }
+  else
+  {
+    activation = poseWorld.poseListOne[listCellNum].cellActivation;
+  }
+
+  float deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
   float deltaPoseY = (sinDegrees(currentDirection) * translation) / 0.5; //(lengthX / sizeX);
-	float deltaPoseTheta = deltaTheta / 60;//(360 / sizeTheta);
+  float deltaPoseTheta = deltaTheta / 60;//(360 / sizeTheta);
 
   int intOffsetX = (int) deltaPoseX; //only a whole number of cells moved
   int intOffsetY = (int) deltaPoseY;
@@ -733,27 +866,30 @@ void pathIntegrateCell(char xp, char yp, char thetap, float deltaTheta, float tr
 
   getActivationDistribution(deltaPoseX - intOffsetX, deltaPoseY - intOffsetY, deltaPoseTheta - intOffsetTheta);
 
+  changeRead();
   for(relativeX = 0; relativeX < 2; relativeX++)
   {
-  	x = getWrappedX(xp + intOffsetX + relativeX);
+    x = getWrappedX(xp + intOffsetX + relativeX);
     for(relativeY = 0; relativeY < 2; relativeY++)
     {
       y = getWrappedY(yp + intOffsetY + relativeY);
-    	for(relativeTheta = 0; relativeTheta < 2; relativeTheta++)
-    	{
-    	  theta = getWrappedTheta(thetap + intOffsetTheta + relativeTheta);
-    	  changeRead();
-    	  addToWriteList(x,y,theta, (distribution[relativeX].array2D[relativeY][relativeTheta] * activation));
-    	  changeRead();
-    	}
+      for(relativeTheta = 0; relativeTheta < 2; relativeTheta++)
+      {
+        theta = getWrappedTheta(thetap + intOffsetTheta + relativeTheta);
+        if((distribution[relativeX].array2D[relativeY][relativeTheta] * activation) > 0)
+        {
+          addToWriteList(x,y,theta, (distribution[relativeX].array2D[relativeY][relativeTheta] * activation));
+        }
+      }
     }
   }
+  changeRead();
 }
 
 //----Sets up Pose Cells----//
 void initialisePose()
 {
-	setupPoseStructure();
+  setupPoseStructure();
   excitationMatrixSetup();
   startCell();
   numActive = 1;
@@ -762,9 +898,9 @@ void initialisePose()
 //----handles all cell stuff----//
 void iterate(float stepSize)
 {
-	float activeSum;
+  float activeSum;
   doExcitation(stepSize);
-  shell_sortListTwo();
+  //sortList();
   activeSum = doInhibition(stepSize);
   doNormalisation(activeSum);
 }
@@ -774,43 +910,40 @@ void pose3D(float deltaTheta, float translation)
 {
   //initialise loop variables
   char f;
-
+  changeRead();
   if(read)
   {
-  	memset(poseWorld.poseListOne, 0, 7*listLength);
-  	listOneActive = 0;
-  	nextEmptyCell = 0;
+    clear_One();
     for(f = 0; f < listTwoActive; f++)
     {
-      pathIntegrateCell(poseWorld.poseListTwo[f].x, poseWorld.poseListTwo[f].y, poseWorld.poseListTwo[f].theta, deltaTheta, translation);
+      pathIntegrateCell(f,poseWorld.poseListTwo[f].x, poseWorld.poseListTwo[f].y, poseWorld.poseListTwo[f].theta, deltaTheta, translation);
+      shell_sortListOne();
     }
 
   }
   else
   {
-
-    memset(poseWorld.poseListTwo, 0, 7*listLength);
-  	listTwoActive = 0;
-  	nextEmptyCell = 0;
+    clear_Two();
     for(f = 0; f < listOneActive; f++)
     {
-      pathIntegrateCell(poseWorld.poseListOne[f].x, poseWorld.poseListOne[f].y, poseWorld.poseListOne[f].theta, deltaTheta, translation);
+      pathIntegrateCell(f,poseWorld.poseListOne[f].x, poseWorld.poseListOne[f].y, poseWorld.poseListOne[f].theta, deltaTheta, translation);
+      shell_sortListTwo();
     }
 
   }
 
-  changeRead();
+  //changeRead();
   iterate(stepSize);
 }
 
 //----Display Max Activated cell----//
 void displayMax()
 {
-	char tempX, tempY, tempTheta;
+  char tempX, tempY, tempTheta;
   tempX = (char) poseWorld.maxActivatedCell.x;
   tempY = (char) poseWorld.maxActivatedCell.y;
   tempTheta = (char) poseWorld.maxActivatedCell.theta;
-	eraseDisplay();
+  eraseDisplay();
   nxtDisplayTextLine(1, "pose: %2d,%2d", tempX, tempY);
   nxtDisplayStringAt(68, 55, ",%2d", tempTheta);
 }
@@ -818,11 +951,11 @@ void displayMax()
 //----Logs data - for testing only----//
 void datalogging()
 {
-	char tempX, tempY, tempTheta;
+  char tempX, tempY, tempTheta;
   tempX = (char) poseWorld.maxActivatedCell.x;
   tempY = (char) poseWorld.maxActivatedCell.y;
   tempTheta = (char) poseWorld.maxActivatedCell.theta;
-	AddToDatalog(1,tempX);
+  AddToDatalog(1,tempX);
   AddToDatalog(2,tempY);
   AddToDatalog(3,tempTheta);
   AddToDatalog(4,numActive);
@@ -832,31 +965,31 @@ void datalogging()
 //----test drives (lol)----//
 void drive(char synchRatio, int travelDistance, char speed)
 {
-	//note a 90 degree turn is ~190 encoders clicks
-	clearEncoders();
-	nSyncedMotors = synchBC;
-	nSyncedTurnRatio = synchRatio;
-	nMotorPIDSpeedCtrl[motorB] = mtrSpeedReg;
-	//nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
+  //note a 90 degree turn is ~190 encoders clicks
+  clearEncoders();
+  nSyncedMotors = synchBC;
+  nSyncedTurnRatio = synchRatio;
+  nMotorPIDSpeedCtrl[motorB] = mtrSpeedReg;
+  //nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
   nMotorEncoderTarget[motorB] = travelDistance;
-	motor[motorB] = speed;
+  motor[motorB] = speed;
   while(nMotorRunState[motorB] != runStateIdle) {}
   changeTheta = getRotation();
   currentDirection += changeTheta;
   if(currentDirection > 360)
   {
-  	currentDirection -= 360;
+    currentDirection -= 360;
   }
 }
 
 //----main----//
 task main ()
 {
-	nxtDisplayCenteredTextLine(3, "Pose Test");
-	wait1Msec(500);
-	initialisePose(); //set up
-	iterate(stepSize); //run excitation etc
-	currentDirection = 0; //set initial
+  nxtDisplayCenteredTextLine(3, "Pose Test");
+  wait1Msec(500);
+  initialisePose(); //set up
+  iterate(stepSize); //run excitation etc
+  currentDirection = 0; //set initial
   currentTheta = 0;
   changeTheta = 0;
 
@@ -866,10 +999,10 @@ task main ()
     nxtDisplayTextLine(4, "Direction: %1d", currentDirection);
     nxtDisplayTextLine(5, "currentTheta:%3d", currentTheta);
     nxtDisplayTextLine(6, "changeTheta:%3d", changeTheta);
-	datalogging();
+  datalogging();
   while(totalClicks<1800)
-	{
-		alive(); //stop NXT from sleeping
+  {
+    alive(); //stop NXT from sleeping
     totalClicks += clicks;
     //drive(-100,190,50);
     drive(50,180,50);
