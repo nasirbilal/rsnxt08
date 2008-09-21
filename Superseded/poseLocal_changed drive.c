@@ -64,7 +64,7 @@ float localTemp[numNeuralUnits]; //holds the temporary neural value
 float localComparison[numNeuralUnits]; //what the local cell data is loaded into
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
 int numberOfCells = 4*sizeTheta*sizeX*sizeY;
-
+int numLocalCells = 100;
 //                           //
 //----Pose Cell Functions----//
 //                           //
@@ -119,6 +119,31 @@ void excitationMatrixSetup()
   excitation_Weights[2].array2D[2][0] =  0.0495;
   excitation_Weights[2].array2D[2][1] =  0.3655;
   excitation_Weights[2].array2D[2][2] =  0.0495;
+}
+
+float countNumber()
+{
+	char i;
+  char j;
+  char k;
+  float num = 0;
+  int checkCount = 0;
+
+	for(i = 0; i < sizeX; i++)
+  {
+    for(j = 0; j < sizeY; j++)
+    {
+      for(k = 0; k < sizeTheta; k++)
+      {
+        if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if active
+        {
+        	num = num+1;
+        }
+        checkCount++;
+      }
+    }
+  }
+	return num;
 }
 
 //----Clears Encoders - used to ensure correct rotation angles----//
@@ -294,6 +319,7 @@ void doExcitation(float stepSize)
     }
   }
   memcpy(poseWorld.poseActivity, tempPose, numberOfCells); //fillFinalPose();
+
 }
 
 //----Inhibits neighbouring cells----//
@@ -441,6 +467,9 @@ void iterate(float stepSize)
 {
 	float activeSum;
   doExcitation(stepSize);
+  float counterThing = 0;
+  counterThing = countNumber();
+  nxtDisplayTextLine(0, "Num ON: %3f",counterThing);
   activeSum = doInhibition(stepSize);
   doNormalisation(activeSum);
 }
@@ -807,6 +836,8 @@ void doTurn()
 	  }
   }
 }
+
+
 
 //----main----//
 task main ()

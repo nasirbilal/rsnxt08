@@ -15,7 +15,10 @@
 //
 //
 /////////////////////////////////////////////////////////////////////////////////////////
-
+// Difference is does inhibition and excitation at the same time
+//
+//
+//
 //----include files----//
 #include "poseCell_list.h";
 
@@ -387,7 +390,7 @@ void findMax()
 //----adds cells to poseList----//
 void addToList(char xAdd, char yAdd, char thetaAdd, float actAdd)
 {
-  int searchRes = searchList(xAdd, yAdd, thetaAdd);
+  int searchRes = searchList2(xAdd, yAdd, thetaAdd);
   if(searchRes == -1)
   {
     if(read)
@@ -435,7 +438,7 @@ void addToStartList(char xAdd, char yAdd, char thetaAdd, float actAdd)
 //----adds cells only to the write list (only use in setExcitation)----//
 void addToWriteList(char xAdd, char yAdd, char thetaAdd, float actAdd)
 {
-  int searchRes = searchList(xAdd, yAdd, thetaAdd);
+  int searchRes = searchList2(xAdd, yAdd, thetaAdd);
   if(searchRes == -1)
   {
     if(read)
@@ -676,6 +679,8 @@ void doExcitation(float stepSize)
   char relY;
   char relTheta;
   float excitationWeight;
+  float activationSum = 0;
+  numActive = 0;
 
   //
   if(read)
@@ -684,7 +689,7 @@ void doExcitation(float stepSize)
     for(i = 0; i < listOneActive; i++)
     {
       float thisActivation = poseWorld.poseListOne[i].cellActivation;
-      if(thisActivation>0.0001)
+      if(thisActivation>0)
       {
         for (relX = -influenceXY; relX <= influenceXY; relX++)
         {
@@ -696,15 +701,17 @@ void doExcitation(float stepSize)
             {
               char neighbourTheta = getWrappedTheta(poseWorld.poseListOne[i].theta + relTheta);
               excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-              if((thisActivation * excitationWeight * stepSize)>0)
+              if(((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize))>0)
               {
-                addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+                addToWriteList(neighbourX,neighbourY,neighbourTheta, ((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize)));
+                activationSum += ((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize));
               }
             }
           }
         }
       }
-      shell_sortListTwo();
+      //shell_sortListTwo();
+      numActive = listTwoActive;
     }
   }
   else
@@ -713,7 +720,7 @@ void doExcitation(float stepSize)
     for(i = 0; i < listTwoActive; i++)
     {
       float thisActivation = poseWorld.poseListTwo[i].cellActivation;
-      if(thisActivation>0.0001)
+      if(thisActivation>0)
       {
         for (relX = -influenceXY; relX <= influenceXY; relX++)
         {
@@ -725,17 +732,35 @@ void doExcitation(float stepSize)
             {
               char neighbourTheta = getWrappedTheta(poseWorld.poseListOne[i].theta + relTheta);
               excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-              if((thisActivation * excitationWeight * stepSize)>0.0001)
+              if(((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize))>0)
               {
-                addToWriteList(neighbourX,neighbourY,neighbourTheta, (thisActivation * excitationWeight * stepSize));
+                addToWriteList(neighbourX,neighbourY,neighbourTheta, ((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize)));
+                activationSum += ((thisActivation * excitationWeight * stepSize) - (globalInhibition * stepSize));
               }
             }
           }
         }
       }
-      shell_sortListOne();
+      //shell_sortListOne();
+      numActive = listOneActive;
     }
   }
+  changeRead();
+  if(read)
+  {
+    for(i = 0; i < listOneActive; i++)
+    {
+      poseWorld.poseListOne[i].cellActivation /= activationSum; //normalise
+    }
+  }
+  else
+  {
+    for(i = 0; i < listTwoActive; i++)
+    {
+      poseWorld.poseListTwo[i].cellActivation /= activationSum; //normalise
+    }
+  }
+  findMax();
 
 }
 
@@ -895,7 +920,7 @@ void pathIntegrateCell(int listCellNum, char xp, char yp, char thetap, float del
       }
     }
   }
-  sortList();
+  //sortList();
   changeRead();
 }
 
@@ -911,11 +936,11 @@ void initialisePose()
 //----handles all cell stuff----//
 void iterate(float stepSize)
 {
-  float activeSum;
+  //float activeSum;
   doExcitation(stepSize);
   //sortList();
-  activeSum = doInhibition(stepSize);
-  doNormalisation(activeSum);
+ // activeSum = doInhibition(stepSize);
+ // doNormalisation(activeSum);
 }
 
 //----handles pose thing----//
@@ -941,7 +966,7 @@ void pose3D(float deltaTheta, float translation)
     for(f = 0; f < listTwoActive; f++)
     {
       pathIntegrateCell(f,poseWorld.poseListTwo[f].x, poseWorld.poseListTwo[f].y, poseWorld.poseListTwo[f].theta, deltaTheta, translation);
-      shell_sortListOne();
+     // shell_sortListOne();
     }
 
   }
@@ -951,7 +976,7 @@ void pose3D(float deltaTheta, float translation)
     for(f = 0; f < listOneActive; f++)
     {
       pathIntegrateCell(f,poseWorld.poseListOne[f].x, poseWorld.poseListOne[f].y, poseWorld.poseListOne[f].theta, deltaTheta, translation);
-      shell_sortListTwo();
+     // shell_sortListTwo();
     }
 
   }

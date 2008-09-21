@@ -20,20 +20,6 @@ float wrappedDegrees360 (float angle)
   return angle;
 }
 
-//ensure only ever within the unit circle
-float wrappedRadians360 (float angle)
-{
-  while(angle >= PI * 2)
-  {
-  	angle -= PI * 2;
-  }
-  while(angle < 0)
-  {
-  	angle += PI * 2;
-  }
-  return angle;
-}
-
 //Angle between two vectors
 int getAngleDegrees(int x, int y)
 {

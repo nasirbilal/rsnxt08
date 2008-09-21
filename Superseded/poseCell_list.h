@@ -23,7 +23,7 @@ float stepSize = 0.2; //this is to account for something
 float globalInhibition = 0.014;//0.014
 char poseEstimationRadius = 6;
 float injectionStrength = 0.075;
-const int listLength = 200;
+const int listLength = 600;
 
 
 //----Structures - mainly 3D arrays----//
