@@ -9,19 +9,17 @@
 ////////////////////////////////////////////////////////////////////
 
 //----Variables----//
-int firstUnit = 15; //for neural units
-int secondUnit = 45;
-int thirdUnit = 75;
-int fourthUnit = 105;
-int fifthUnit = 135;
-const char numLocalCells = 100; //number of possible views
-const char numNeuralUnits = 18; //number of neural units representing a view
+int firstUnit = 40; //for neural units
+int secondUnit = 80;
+int thirdUnit = 120;
+int fourthUnit = 160;
+int fifthUnit = 200;
+const char numNeuralUnits = 15; //number of neural units representing a view
 
 typedef struct
 {
-  float localArray[18];
+  float localArray[numNeuralUnits];
 } localViewCell;
-
 
 //----Functions----//
 void clearTemp();
