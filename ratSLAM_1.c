@@ -39,15 +39,13 @@ int changeTheta = 0;
 int localTemp[numNeuralUnits]; //holds the temporary neural value
 int localComparison[numNeuralUnits]; //what the local cell data is loaded into
 char nextEmptyCell = 0; //used for holding the next empty cell in the localcell Struct
-int encoderX = 0; //total move in x-direction in encoder clicks for experiences
-int encoderY = 0; //total move in y-direction in encoder clicks for experiences
-int encoderTheta = 0; //will equal change theta
 int nextID = 0;
 int nextLink = 0;
-int tempCalc = 0;
-vector3D encoderData;
-vector3D maxActivatedCellPose;
+char read = 0;
+vector3DE encoderData;
+PoseCellPosition maxActivatedCellPose;
 localViewCell localTempView;
+float averageEncoder = 0;
 
 //----Specific global variables for functions (in an attempt to save memory :))----//
 //path integratation
@@ -58,60 +56,88 @@ int intOffsetX; //only a whole number of cells moved
 int intOffsetY;
 int intOffsetTheta;
 
+//local view neural units
+int tempCalc = 0;
+
+//loop global variables
+char i;
+char j;
+char k;
+
+//path integration and excitation
+char relativeX;
+char relativeY;
+char relativeTheta;
+
+//Sonar
+int rightSonarValue = 0;
+int leftSonarValue = 0;
+int centreSonarValue = 0;
 //                           //
 //----Pose Cell Functions----//
 //                           //
 
+//----Change which struct is used----//
+void changeRead()
+{
+  read = !read;
+}
+
 //----initialises the start cell and sets starting activation----//
 void startCell()
 {
-  poseWorld.maxActivatedCell.x = 5;
-  poseWorld.maxActivatedCell.y = 5;
-  poseWorld.maxActivatedCell.theta = 0;
-  poseWorld.poseActivity[5].array2D[5][0] = startActivation;
+  maxActivatedCell.x = 5;
+  maxActivatedCell.y = 5;
+  maxActivatedCell.theta = 0;
+  maxActivatedCell.act = 0.5;
+  poseActivity1[5].array2D[5][0] = 0.5;
 }
 
 //----initalises all pose cells as inactive and sets all pose activity to zero----//
 void setupPoseStructure()
 {
-  memset(tempPose, 0, numberOfCells);
-  memset(poseWorld,0, numberOfCells + 3);
-  memset(poseAssoc, 0, 30*numLocalCells);
+  memset(poseActivity1, 0, numberOfCells);
+  memset(poseActivity2,0, numberOfCells);
+  memset(maxActivatedCell, 0, 7);
+  memset(poseAssoc, 0, 33*numLocalCells);
+  memset(encoderData,0,12);
+  memset(maxActivatedCellPose,0,3);
+  memset(localTempView,0,30);
 }
 
 //----Excitation matrix----//
 void excitationMatrixSetup()
 {
-	//done in matlab - probably should check if right
-  excitation_Weights[0].array2D[0][0] =  4.95;
-  excitation_Weights[0].array2D[0][1] =  36.55;
-  excitation_Weights[0].array2D[0][2] =  4.95;
-  excitation_Weights[0].array2D[1][0] =  17.27;
-  excitation_Weights[0].array2D[1][1] =  127.57;
-  excitation_Weights[0].array2D[1][2] =  17.27;
-  excitation_Weights[0].array2D[2][0] =  4.95;
-  excitation_Weights[0].array2D[2][1] =  36.55;
-  excitation_Weights[0].array2D[2][2] =  4.95;
+  //done in matlab - probably should check if right
+  excitation_Weights[0].array2D[0][0] =  0.0495;
+  excitation_Weights[0].array2D[0][1] =  0.3655;
+  excitation_Weights[0].array2D[0][2] =  0.0495;
+  excitation_Weights[0].array2D[1][0] =  0.1727;
+  excitation_Weights[0].array2D[1][1] =  1.2757;
+  excitation_Weights[0].array2D[1][2] =  0.1727;
+  excitation_Weights[0].array2D[2][0] =  0.0495;
+  excitation_Weights[0].array2D[2][1] =  0.3655;
+  excitation_Weights[0].array2D[2][2] =  0.0495;
 
-  excitation_Weights[1].array2D[0][0] =  17.27;
-  excitation_Weights[1].array2D[0][1] =  127.57;
-  excitation_Weights[1].array2D[0][2] =  17.27;
-  excitation_Weights[1].array2D[1][0] =  60.26;
-  excitation_Weights[1].array2D[1][1] =  445.28;
-  excitation_Weights[1].array2D[1][2] =  60.26;
-  excitation_Weights[1].array2D[2][0] =  17.27;
-  excitation_Weights[1].array2D[2][1] =  127.57;
-  excitation_Weights[1].array2D[2][2] =  17.27;
+  excitation_Weights[1].array2D[0][0] =  0.1727;
+  excitation_Weights[1].array2D[0][1] =  1.2757;
+  excitation_Weights[1].array2D[0][2] =  0.1727;
+  excitation_Weights[1].array2D[1][0] =  0.6026;
+  excitation_Weights[1].array2D[1][1] =  4.4528;
+  excitation_Weights[1].array2D[1][2] =  0.6026;
+  excitation_Weights[1].array2D[2][0] =  0.1727;
+  excitation_Weights[1].array2D[2][1] =  1.2757;
+  excitation_Weights[1].array2D[2][2] =  0.1727;
 
-  excitation_Weights[2].array2D[0][0] =  4.95;
-  excitation_Weights[2].array2D[0][1] =  36.55;
-  excitation_Weights[2].array2D[0][2] =  4.95;
-  excitation_Weights[2].array2D[1][0] =  17.27;
-  excitation_Weights[2].array2D[1][1] =  127.57;
-  excitation_Weights[2].array2D[1][2] =  17.27;
-  excitation_Weights[2].array2D[2][0] =  4.95;
-  excitation_Weights[2].array2D[2][1] =  36.55;
-  excitation_Weights[2].array2D[2][2] =  4.95;
+  excitation_Weights[2].array2D[0][0] =  0.0495;
+  excitation_Weights[2].array2D[0][1] =  0.3655;
+  excitation_Weights[2].array2D[0][2] =  0.0495;
+  excitation_Weights[2].array2D[1][0] =  0.1727;
+  excitation_Weights[2].array2D[1][1] =  1.2757;
+  excitation_Weights[2].array2D[1][2] =  0.1727;
+  excitation_Weights[2].array2D[2][0] =  0.0495;
+  excitation_Weights[2].array2D[2][1] =  0.3655;
+  excitation_Weights[2].array2D[2][2] =  0.0495;
 }
 
 //----Clears Encoders - used to ensure correct rotation angles----//
@@ -124,6 +150,13 @@ void clearEncoders()
   nMotorEncoder[motorB] = 0;
 }
 
+void setEncoderData(int angle)
+{
+  encoderData.x = encoderData.x + (int) (cosDegrees(angle)*averageEncoder);
+  encoderData.y = encoderData.y + (int) (sinDegrees(angle)*averageEncoder);
+  encoderData.z = angle;
+}
+
 //----Determine rotation of robot from encoder values----//
 int getRotation()
 {
@@ -131,22 +164,22 @@ int getRotation()
 	float motorCCount = nMotorEncoder[motorC];
 	motorBCount /= 190; //distance between wheels in encoder clicks
 	motorCCount /= 190;
-	int thetaOne;
-	int thetaTwo;
-	int thetaThree;
+	float thetaOne;
+	float thetaTwo;
+	float thetaThree;
 	if(motorBCount<0)
 	{
 	  motorBCount *= -1;
 	  thetaOne = getDegrees(atan(motorBCount));
 	  thetaTwo = getDegrees(atan(motorCCount));
-    return -(thetaOne + thetaTwo);
+    return (int) -(thetaOne + thetaTwo);
 	}
 	else if(motorCCount<0)
 	{
     motorCCount *= -1;
 	  thetaOne = getDegrees(atan(motorBCount));
 	  thetaTwo = getDegrees(atan(motorCCount));
-	  return (thetaOne + thetaTwo);
+	  return (int) (thetaOne + thetaTwo);
   }
   else if(motorCCount < 0 && motorBCount < 0)
   {
@@ -154,15 +187,15 @@ int getRotation()
   	motorCCount *= -1;
   	thetaOne = getDegrees(atan(motorBCount));
 	  thetaTwo = getDegrees(atan(motorCCount));
-	  return (thetaOne + thetaTwo);
+	  return (int) (thetaOne + thetaTwo);
   }
   else
   {
   	thetaOne = getDegrees(atan(motorBCount));
 	  thetaTwo = getDegrees(atan(motorCCount));
-	  return (thetaOne - thetaTwo);
+	  return (int) (thetaOne - thetaTwo);
   }
-  return thetaThree;
+  return (int) thetaThree;
 }
 
 
@@ -212,115 +245,187 @@ char getWrappedTheta(char indexTheta)
 void setActivation(char cellX, char cellY, char cellTheta, float activation)
 {
 	float previousActivation; //previous activation of a cell
-	float maxActivation; //activation of max axtivated cell
-	char maxX;  //co-ordinates of max activated cell
-	char maxY;
-	char maxTheta;
+  if(read)
+  {
+	  //set values
+    previousActivation = poseActivity2[cellX].array2D[cellY][cellTheta];
+    if(previousActivation == activation)
+    {//if the same do nothing, exit function
+      return;
+    }
+    poseActivity2[cellX].array2D[cellY][cellTheta] = activation; //else set activation
 
-	//set values
-  previousActivation = poseWorld.poseActivity[cellX].array2D[cellY][cellTheta];
-  maxX = poseWorld.maxActivatedCell.x;
-  maxY = poseWorld.maxActivatedCell.y;
-  maxTheta = poseWorld.maxActivatedCell.theta;
-  maxActivation = poseWorld.poseActivity[maxX].array2D[maxY][maxTheta];
-
-  if(previousActivation == activation)
-  {//if the same do nothing, exit function
-    return;
+    if(activation > poseActivity2[maxActivatedCell.x].array2D[maxActivatedCell.y][maxActivatedCell.theta])
+    {//if activation greater than max, then set as maximum
+      maxActivatedCell.x = cellX;
+      maxActivatedCell.y = cellY;
+      maxActivatedCell.theta = cellTheta;
+      maxActivatedCell.act = activation;
+    }
   }
-  poseWorld.poseActivity[cellX].array2D[cellY][cellTheta] = activation; //else set activation
+  else
+  {
+	  //set values
+    previousActivation = poseActivity1[cellX].array2D[cellY][cellTheta];
+    if(previousActivation == activation)
+    {//if the same do nothing, exit function
+      return;
+    }
+    poseActivity1[cellX].array2D[cellY][cellTheta] = activation; //else set activation
 
-  if(activation > maxActivation)
-  {//if activation greater than max, then set as maximum
-    poseWorld.maxActivatedCell.x = cellX;
-    poseWorld.maxActivatedCell.y = cellY;
-    poseWorld.maxActivatedCell.theta = cellTheta;
+    if(activation > poseActivity1[maxActivatedCell.x].array2D[maxActivatedCell.y][maxActivatedCell.theta])
+    {//if activation greater than max, then set as maximum
+      maxActivatedCell.x = cellX;
+      maxActivatedCell.y = cellY;
+      maxActivatedCell.theta = cellTheta;
+      maxActivatedCell.act = activation;
+    }
   }
+
 }
 
 //----Injects additional activity into cells----//
 void injectEnergy (float stepSize, char xCell, char yCell, char thetaCell)
 {
-  float previousActivation = poseWorld.poseActivity[poseAssoc.xCell].array2D[poseAssoc.yCell][poseAssoc.thetaCell];
+	float previousActivation;
+	if(read)
+	{
+	  previousActivation = poseActivity2[poseAssoc.xCell].array2D[poseAssoc.yCell][poseAssoc.thetaCell];
+	}
+	else
+	{
+		previousActivation = poseActivity1[poseAssoc.xCell].array2D[poseAssoc.yCell][poseAssoc.thetaCell];
+	}
   setActivation(poseAssoc.xCell,poseAssoc.yCell,poseAssoc.thetaCell, previousActivation + injectionStrength * stepSize);
 }
 
 //----Excites neighbouring cells----//
 void doExcitation(float stepSize)
 {
-  //initialises loop varibles
-  char i;
-  char j;
-  char k;
-
-  char relX;
-  char relY;
-  char relTheta;
-
-  memcpy(tempPose, poseWorld.poseActivity, numberOfCells); //fillTempPose();
-
-  for(i = 0; i < sizeX; i++)
+  if(read)
   {
-    for(j = 0; j < sizeY; j++)
+    memcpy(poseActivity2, poseActivity1, numberOfCells); //fillposeActivity12();
+
+    for(i = 0; i < sizeX; i++)
     {
-      for(k = 0; k < sizeTheta; k++)
+     for(j = 0; j < sizeY; j++)
       {
-        if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if cell active
+        for(k = 0; k < sizeTheta; k++)
         {
-        	float thisActivation = poseWorld.poseActivity[i].array2D[j][k];
-        	for (relX = -influenceXY; relX <= influenceXY; relX++)
-        	{
-            char neighbourX = getWrappedX(i + relX);
-            for(relY = - influenceXY; relY<= influenceXY; relY++)
-            {
-              char neighbourY = getWrappedY(j + relY);
-              for(relTheta = -influenceTheta; relTheta <= influenceTheta; relTheta++)
+          if(poseActivity1[i].array2D[j][k] > 0) //if cell active
+          {
+        	  float thisActivation = poseActivity1[i].array2D[j][k];
+        	  for (relativeX = -influenceXY; relativeX <= influenceXY; relativeX++)
+        	  {
+              char neighbourX = getWrappedX(i + relativeX);
+              for(relativeY = - influenceXY; relativeY<= influenceXY; relativeY++)
               {
-                char neighbourTheta = getWrappedTheta(k + relTheta);
-              	float excitationWeight = excitation_Weights[relX + influenceXY].array2D[relY + influenceXY][relTheta + influenceTheta];
-                tempPose[neighbourX].array2D[neighbourY][neighbourTheta] += (thisActivation * excitationWeight * stepSize);
+                char neighbourY = getWrappedY(j + relativeY);
+                for(relativeTheta = -influenceTheta; relativeTheta <= influenceTheta; relativeTheta++)
+                {
+                  char neighbourTheta = getWrappedTheta(k + relativeTheta);
+              	  float excitationWeight = excitation_Weights[relativeX + influenceXY].array2D[relativeY + influenceXY][relativeTheta + influenceTheta];
+                  poseActivity2[neighbourX].array2D[neighbourY][neighbourTheta] += (thisActivation * excitationWeight * stepSize);
+                }
               }
-            }
-        	}
+        	  }
+          }
         }
       }
     }
   }
-  memcpy(poseWorld.poseActivity, tempPose, numberOfCells); //fillFinalPose();
+  else
+  {
+    memcpy(poseActivity1, poseActivity2, numberOfCells); //fillposeActivity12();
+
+    for(i = 0; i < sizeX; i++)
+    {
+     for(j = 0; j < sizeY; j++)
+      {
+        for(k = 0; k < sizeTheta; k++)
+        {
+          if(poseActivity2[i].array2D[j][k] > 0) //if cell active
+          {
+        	  float thisActivation = poseActivity2[i].array2D[j][k];
+        	  for (relativeX = -influenceXY; relativeX <= influenceXY; relativeX++)
+        	  {
+              char neighbourX = getWrappedX(i + relativeX);
+              for(relativeY = - influenceXY; relativeY<= influenceXY; relativeY++)
+              {
+                char neighbourY = getWrappedY(j + relativeY);
+                for(relativeTheta = -influenceTheta; relativeTheta <= influenceTheta; relativeTheta++)
+                {
+                  char neighbourTheta = getWrappedTheta(k + relativeTheta);
+              	  float excitationWeight = excitation_Weights[relativeX + influenceXY].array2D[relativeY + influenceXY][relativeTheta + influenceTheta];
+                  poseActivity1[neighbourX].array2D[neighbourY][neighbourTheta] += (thisActivation * excitationWeight * stepSize);
+                }
+              }
+        	  }
+          }
+        }
+      }
+    }
+  }
 }
 
 //----Inhibits neighbouring cells----//
 float doInhibition(float stepSize)
 {
-	float inhibition = globalInhibition * stepSize;
   float activationSum = 0;
+  float activation = 0;
   numActive = 0; //clear number of active cells counter
 
-  //initialise loop variable
-  char i;
-  char j;
-  char k;
-
-  for(i = 0; i < sizeX; i++)
+  if(read)
   {
-    for(j = 0; j < sizeY; j++)
+    for(i = 0; i < sizeX; i++)
     {
-      for(k = 0; k < sizeTheta; k++)
+      for(j = 0; j < sizeY; j++)
       {
-        if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if cell active
+        for(k = 0; k < sizeTheta; k++)
         {
-        	float activation = poseWorld.poseActivity[i].array2D[j][k] - inhibition;
-          if(activation <=0)
+          if(poseActivity2[i].array2D[j][k] > 0) //if cell active
           {
-            activation = 0; //cant have negative activity
-            poseWorld.poseActivity[i].array2D[j][k] = activation;
+        	  activation = poseActivity2[i].array2D[j][k] - (0.014 * stepSize);
+            if(activation <=0)
+            {
+              activation = 0; //cant have negative activity
+              poseActivity2[i].array2D[j][k] = activation;
+            }
+            else
+            {
+          	  //have decided that as only max cells will be above zero why bother checking if maximum if = 0
+          	  setActivation(i, j, k, activation); //set activation and see if is maximum
+          	  activationSum += activation;
+              numActive++; //increase number of active cells
+            }
           }
-          else
+        }
+      }
+    }
+  }
+  else
+  {
+    for(i = 0; i < sizeX; i++)
+    {
+      for(j = 0; j < sizeY; j++)
+      {
+        for(k = 0; k < sizeTheta; k++)
+        {
+          if(poseActivity1[i].array2D[j][k] > 0) //if cell active
           {
-          	//have decided that as only max cells will be above zero why bother checking if maximum if = 0
-          	setActivation(i, j, k, activation); //set activation and see if is maximum
-          	activationSum += activation;
-            numActive++; //increase number of active cells
+        	  activation = poseActivity1[i].array2D[j][k] - (0.014 * stepSize);
+            if(activation <=0)
+            {
+              activation = 0; //cant have negative activity
+              poseActivity1[i].array2D[j][k] = activation;
+            }
+            else
+            {
+          	  //have decided that as only max cells will be above zero why bother checking if maximum if = 0
+          	  setActivation(i, j, k, activation); //set activation and see if is maximum
+          	  activationSum += activation;
+              numActive++; //increase number of active cells
+            }
           }
         }
       }
@@ -334,22 +439,39 @@ void doNormalisation(float activationSum)
 {//requires activationSum from inhibition
 
   //initalise loop variables
-	char i;
-  char j;
-  char k;
-
-  for(i = 0; i < sizeX; i++)
+  if(read)
   {
-    for(j = 0; j < sizeY; j++)
+    for(i = 0; i < sizeX; i++)
     {
-      for(k = 0; k < sizeTheta; k++)
+      for(j = 0; j < sizeY; j++)
       {
-        if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if active
+        for(k = 0; k < sizeTheta; k++)
         {
-        	poseWorld.poseActivity[i].array2D[j][k] = (poseWorld.poseActivity[i].array2D[j][k] / activationSum); //normalise
+          if(poseActivity2[i].array2D[j][k] > 0) //if active
+          {
+          poseActivity2[i].array2D[j][k] = (poseActivity2[i].array2D[j][k] / activationSum); //normalise
+          }
         }
       }
     }
+    maxActivatedCell.act = poseActivity2[maxActivatedCell.x].array2D[maxActivatedCell.y][maxActivatedCell.theta];
+  }
+  else
+  {
+    for(i = 0; i < sizeX; i++)
+    {
+      for(j = 0; j < sizeY; j++)
+      {
+        for(k = 0; k < sizeTheta; k++)
+        {
+          if(poseActivity1[i].array2D[j][k] > 0) //if active
+          {
+          poseActivity1[i].array2D[j][k] = (poseActivity1[i].array2D[j][k] / activationSum); //normalise
+          }
+        }
+      }
+    }
+    maxActivatedCell.act = poseActivity1[maxActivatedCell.x].array2D[maxActivatedCell.y][maxActivatedCell.theta];
   }
 }
 
@@ -361,10 +483,6 @@ void getActivationDistribution(float offsetX, float offsetY, float offsetTheta)
   char signY;
   char signTheta;
   float portion;
-
-  char i;
-  char j;
-  char k;
 
   signX = -1;
   for(i = 0; i < 2; i++)
@@ -389,27 +507,43 @@ void getActivationDistribution(float offsetX, float offsetY, float offsetTheta)
 void pathIntegrateCell(char xp, char yp, char thetap, float deltaTheta, float translation)
 {
   //initialise loop variables
-	char relativeX;
-	char relativeY;
-	char relativeTheta;
-
 	char x;
 	char y;
 	char theta;
 
-  for(relativeX = 0; relativeX < 2; relativeX++)
-  {
-  	x = getWrappedX(xp + intOffsetX + relativeX);
-    for(relativeY = 0; relativeY < 2; relativeY++)
+	if(read)
+	{
+    for(relativeX = 0; relativeX < 2; relativeX++)
     {
-      y = getWrappedY(yp + intOffsetY + relativeY);
-    	for(relativeTheta = 0; relativeTheta < 2; relativeTheta++)
-    	{
-    	  theta = getWrappedTheta(thetap + intOffsetTheta + relativeTheta);
-    	  tempPose[x].array2D[y][theta] += distribution[relativeX].array2D[relativeY][relativeTheta] * poseWorld.poseActivity[xp].array2D[yp][thetap];
-    	}
+      x = getWrappedX(xp + intOffsetX + relativeX);
+      for(relativeY = 0; relativeY < 2; relativeY++)
+      {
+        y = getWrappedY(yp + intOffsetY + relativeY);
+    	  for(relativeTheta = 0; relativeTheta < 2; relativeTheta++)
+    	  {
+    	    theta = getWrappedTheta(thetap + intOffsetTheta + relativeTheta);
+    	    poseActivity2[x].array2D[y][theta] += distribution[relativeX].array2D[relativeY][relativeTheta] * poseActivity1[xp].array2D[yp][thetap];
+    	  }
+      }
     }
   }
+  else
+	{
+    for(relativeX = 0; relativeX < 2; relativeX++)
+    {
+      x = getWrappedX(xp + intOffsetX + relativeX);
+      for(relativeY = 0; relativeY < 2; relativeY++)
+      {
+        y = getWrappedY(yp + intOffsetY + relativeY);
+    	  for(relativeTheta = 0; relativeTheta < 2; relativeTheta++)
+    	  {
+    	    theta = getWrappedTheta(thetap + intOffsetTheta + relativeTheta);
+    	    poseActivity1[x].array2D[y][theta] += distribution[relativeX].array2D[relativeY][relativeTheta] * poseActivity2[xp].array2D[yp][thetap];
+    	  }
+      }
+    }
+  }
+
 }
 
 //----Sets up Pose Cells----//
@@ -419,28 +553,29 @@ void initialisePose()
   excitationMatrixSetup();
   startCell();
   numActive = 1;
+  changeRead();
 }
 
 //----handles all cell stuff----//
 void iterate(float stepSize)
 {
+	averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
 	float activeSum;
-  doExcitation(stepSize);
+	doExcitation(stepSize);
   activeSum = doInhibition(stepSize);
   doNormalisation(activeSum);
+  setEncoderData(currentDirection);
+  grabData();
+  iterateMap(stepSize);
 }
 
 //----handles pose thing----//
 void pose3D(float deltaTheta, float translation)
 {
   //initialise loop variables
-  char i;
-  char j;
-  char k;
-
   deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
   deltaPoseY = (sinDegrees(currentDirection) * translation) / 0.5; //(lengthX / sizeX);
-	deltaPoseTheta = deltaTheta / 60;//(360 / sizeTheta);
+	deltaPoseTheta = deltaTheta / 76;//(360 / sizeTheta);
 
   intOffsetX = (int) deltaPoseX; //only a whole number of cells moved
   intOffsetY = (int) deltaPoseY;
@@ -448,23 +583,45 @@ void pose3D(float deltaTheta, float translation)
 
   getActivationDistribution(deltaPoseX - intOffsetX, deltaPoseY - intOffsetY, deltaPoseTheta - intOffsetTheta);
 
-  memset(tempPose, 0, numberOfCells); //a zero matrix to perform path integration on
+  changeRead();
 
-  for(i = 0; i < 10; i++)
+  if(read)
   {
-    for(j = 0; j < 10; j++)
+    memset(poseActivity2, 0, numberOfCells); //a zero matrix to perform path integration on
+
+    for(i = 0; i < sizeX; i++)
     {
-      for(k = 0; k < 6; k++)
+      for(j = 0; j < sizeY; j++)
       {
-        if(poseWorld.poseActivity[i].array2D[j][k] > 0) //if active
+        for(k = 0; k < sizeTheta; k++)
         {
-          pathIntegrateCell(i, j, k, deltaTheta, translation);
+          if(poseActivity1[i].array2D[j][k] > 0) //if active
+          {
+            pathIntegrateCell(i, j, k, deltaTheta, translation);
+          }
         }
       }
     }
   }
-  memcpy(poseWorld.poseActivity,tempPose,numberOfCells);
-  iterate(stepSize);
+  else
+  {
+    memset(poseActivity1, 0, numberOfCells); //a zero matrix to perform path integration on
+
+    for(i = 0; i < sizeX; i++)
+    {
+      for(j = 0; j < sizeY; j++)
+      {
+        for(k = 0; k < sizeTheta; k++)
+        {
+          if(poseActivity2[i].array2D[j][k] > 0) //if active
+          {
+            pathIntegrateCell(i, j, k, deltaTheta, translation);
+          }
+        }
+      }
+    }
+  }
+  changeRead();
 }
 /*
 //----Display Max Activated cell----//
@@ -476,7 +633,7 @@ void displayMax()
   tempTheta = (char) poseWorld.maxActivatedCell.theta;
 	eraseDisplay();
   nxtDisplayTextLine(1, "pose: %2d,%2d", tempX, tempY);
-  nxtDisplayStringAt(68, 55, ",%2d", tempTheta);
+  nxtDisplayStringAt(76, 55, ",%2d", tempTheta);
 }
 */
 //----test drives----//
@@ -507,49 +664,41 @@ void drawRect(char xCo, char yCo, char percent)
 {
   char startX = xCo * 6 + 2;
   char startY = yCo * 6 + 2;
+  int count = 0;
+  char yOffset = 0;
+  char xOffset = 0;
+  char s;
+
   if(percent == 100)
   {
     nxtFillRect(startX, startY, startX + 5, startY + 5);
   }
   else if(percent == 85)
   {
-  	int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-      if(eightyFivePercent[x+xOffset]==1)
-      {
-         nxtSetPixel(startX+x, startY + yOffset);
+        if(eightyFivePercent[s+xOffset]==1)
+        {
+          nxtSetPixel(startX+s, startY + yOffset);
         }
-
       }
       xOffset += 6;
       yOffset+=1;
       count+=1;
     }
-
   }
   else if(percent == 75)
   {
-    int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-      if(seventyFivePercent[x+xOffset]==1)
-      {
-         nxtSetPixel(startX+x, startY + yOffset);
+        if(seventyFivePercent[s+xOffset]==1)
+        {
+         nxtSetPixel(startX+s, startY + yOffset);
         }
-
       }
       xOffset += 6;
       yOffset+=1;
@@ -558,20 +707,14 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 67)
   {
-  	int count = 0;
-   char yOffset = 0;
-   char xOffset = 0;
    while(count<6)
    {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-      if(sixtySevenPercent[x+xOffset]==1)
-      {
-         nxtSetPixel(startX+x, startY + yOffset);
+        if(sixtySevenPercent[s+xOffset]==1)
+        {
+         nxtSetPixel(startX+s, startY + yOffset);
         }
-
       }
       xOffset += 6;
       yOffset+=1;
@@ -580,20 +723,14 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 50)
   {
-   int count = 0;
-   char yOffset = 0;
-   char xOffset = 0;
    while(count<6)
    {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-      if(fiftyPercent[x+xOffset]==1)
-      {
-         nxtSetPixel(startX+x, startY + yOffset);
-      }
-
+        if(fiftyPercent[s+xOffset]==1)
+        {
+          nxtSetPixel(startX+s, startY + yOffset);
+        }
       }
       xOffset += 6;
       yOffset+=1;
@@ -602,20 +739,14 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 33)
   {
-  	int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-      if(thirtyThreePercent[x+xOffset]==1)
-      {
-         nxtSetPixel(startX+x, startY + yOffset);
-      }
-
+        if(thirtyThreePercent[s+xOffset]==1)
+        {
+         nxtSetPixel(startX+s, startY + yOffset);
+        }
       }
       xOffset += 6;
       yOffset+=1;
@@ -624,18 +755,13 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 25)
   {
-  	int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-        if(twentyfivePercent[x+xOffset]==1)
+        if(twentyfivePercent[s+xOffset]==1)
         {
-           nxtSetPixel(startX+x, startY + yOffset);
+           nxtSetPixel(startX+s, startY + yOffset);
         }
       }
       xOffset += 6;
@@ -645,18 +771,13 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 15)
   {
-  	int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-        if(fifteenPercent[x+xOffset]==1)
+        if(fifteenPercent[s+xOffset]==1)
         {
-          nxtSetPixel(startX+x, startY + yOffset);
+          nxtSetPixel(startX+s, startY + yOffset);
         }
       }
       xOffset += 6;
@@ -666,18 +787,13 @@ void drawRect(char xCo, char yCo, char percent)
   }
   else if(percent == 2)
   {
-  	int count = 0;
-    char yOffset = 0;
-    char xOffset = 0;
     while(count<6)
     {
-      char x;
-
-      for(x = 0; x<6; x++)
+      for(s = 0; s<6; s++)
       {
-        if(twoPercent[x+xOffset]==1)
+        if(twoPercent[s+xOffset]==1)
         {
-          nxtSetPixel(startX+x, startY + yOffset);
+          nxtSetPixel(startX+s, startY + yOffset);
         }
       }
       xOffset += 6;
@@ -827,21 +943,20 @@ void addAssociation(char cellNum)
   //creates an association between local view and pose - currently using max activated cell as the one needed but may end
 	//up using estimated pose as in RAMP code
 	memcpy(poseAssoc[cellNum].localView,localTemp,numNeuralUnits*2);
-	poseAssoc[cellNum].xCell = poseWorld.maxActivatedCell.x;
-	poseAssoc[cellNum].yCell = poseWorld.maxActivatedCell.y;
-	poseAssoc[cellNum].thetaCell = poseWorld.maxActivatedCell.theta;
+	poseAssoc[cellNum].xCell = maxActivatedCell.x;
+	poseAssoc[cellNum].yCell = maxActivatedCell.y;
+	poseAssoc[cellNum].thetaCell = maxActivatedCell.theta;
 }
 
 //----Dot multiply two vectors----//
 float dotMultiply()
 {
-  char i;
   float dotValue = 0;
   for(i = 0; i < numNeuralUnits; i++)
   {
     if(localTemp[i]>0)
     {
-      dotValue = dotValue + localTemp[i] * (localComparison[i];
+      dotValue = dotValue + (localTemp[i] * localComparison[i]);
     }
   }
   dotValue = (float) (dotValue/10000);
@@ -877,9 +992,9 @@ void setTemp()
 {
 	//initalises temp, get sensor readings and sets the local temp to a normalised neural vector
   clearTemp();
-	int rightSonarValue = SensorValue(rightSonar); //obvious
-  int leftSonarValue = SensorValue(leftSonar);
-  int centreSonarValue = SensorValue(centreSonar);
+	rightSonarValue = SensorValue(rightSonar); //obvious
+  leftSonarValue = SensorValue(leftSonar);
+  centreSonarValue = SensorValue(centreSonar);
   setLeft(leftSonarValue);
 	setCentre(centreSonarValue);
 	setRight(rightSonarValue);
@@ -909,7 +1024,7 @@ void checkLocalCell()
       memcpy(localComparison,poseAssoc[z].localView,numNeuralUnits*2);
       dotTempValue = dotMultiply();
       tempAngle = acos(dotTempValue);
-      if(tempAngle<0.17) //if difference less than 10 degrees between vectors
+      if(tempAngle<0.26) //if difference less than 10 degrees between vectors
       {
       	match = 1;
       	break; //save cycles break out
@@ -926,18 +1041,13 @@ void checkLocalCell()
     }
     else if(match == 1)
     {
-    	char tempX, tempY, tempTheta;
-    	tempX = poseAssoc[nextEmptyCell-1].xCell;
-    	tempY = poseAssoc[nextEmptyCell-1].yCell;
-    	tempTheta = poseAssoc[nextEmptyCell-1].thetaCell;
-    	injectEnergy(stepSize, tempX, tempY, tempTheta);
-    	nxtDisplayStringAt(64,30,"x: %2d",tempX);
-	    nxtDisplayStringAt(64,20,"y: %2d",tempY);
-	    nxtDisplayStringAt(64,10,"T: %1d",tempTheta);
+    	injectEnergy(stepSize, poseAssoc[nextEmptyCell-1].xCell, poseAssoc[nextEmptyCell-1].yCell, poseAssoc[nextEmptyCell-1].thetaCell);
+    	nxtDisplayStringAt(64,30,"x: %2d",poseAssoc[nextEmptyCell-1].xCell);
+	    nxtDisplayStringAt(64,20,"y: %2d",poseAssoc[nextEmptyCell-1].yCell);
+	    nxtDisplayStringAt(64,10,"T: %1d",poseAssoc[nextEmptyCell-1].thetaCell);
     	//nxtDisplayCenteredTextLine(6, "Energy Injected");
       PlaySound(soundBeepBeep);
       while(bSoundActive) {}
-
     }
   }
 }
@@ -947,10 +1057,9 @@ void doTurn()
 {
 //part of the testing reigme of the local cells
 	//decided that anticlockwise is positive
-	float rightSonarValue = SensorValue(rightSonar); //obvious
-  float leftSonarValue = SensorValue(leftSonar);
-  float centreSonarValue = SensorValue(centreSonar);
-
+	rightSonarValue = SensorValue(rightSonar); //obvious
+  leftSonarValue = SensorValue(leftSonar);
+  centreSonarValue = SensorValue(centreSonar);
 
 	if(centreSonarValue<19)
 	{
@@ -980,81 +1089,106 @@ void doTurn()
 //----Logs data - for testing only----//
 void datalogging()
 {
-	char tempX, tempY, tempTheta;
-  tempX = (char) poseWorld.maxActivatedCell.x;
-  tempY = (char) poseWorld.maxActivatedCell.y;
-  tempTheta = (char) poseWorld.maxActivatedCell.theta;
-	AddToDatalog(1,tempX);
-  AddToDatalog(2,tempY);
-  AddToDatalog(3,tempTheta);
+	AddToDatalog(1,maxActivatedCell.x);
+  AddToDatalog(2,maxActivatedCell.y);
+  AddToDatalog(3,maxActivatedCell.theta);
   AddToDatalog(4,numActive);
-  AddToDatalog(5,'0'); //just a separator
+}
+
+void datalogging2()
+{
+	int data;
+	for(data = 0; data<numOfExperiences; data++)
+	{
+		int d1 = (int) Map.experienceMap[data].mapPose.x;
+		int d2 = (int) Map.experienceMap[data].mapPose.y;
+		int d3 = (int) Map.experienceMap[data].mapPose.z;
+
+	  AddToDatalog(1,d1);
+    AddToDatalog(2,d2);
+    AddToDatalog(3,d3);
+  }
 }
 
 void sumPoseStruct()
 {
   float tempStruct[10][10];
   memset(tempStruct,0,400);
-  char x,y,z;
   float sumActive = 0;
-  for(x = 0; x<10; x++)
+  if(read)
   {
-    for(y=0; y<10; y++)
+    for(i = 0; i<sizeX; i++)
     {
-      for(z=0; z<6; z++)
+      for(j=0; j<sizeY; j++)
       {
-        tempStruct[x][y] += poseWorld.poseActivity[x].array2D[y][z];
+        for(k=0; k<sizeTheta; k++)
+        {
+          tempStruct[i][j] += poseActivity2[i].array2D[j][k];
+        }
       }
     }
   }
-  sumActive = tempStruct[poseWorld.maxActivatedCell.x][poseWorld.maxActivatedCell.y];
+  else
+  {
+    for(i = 0; i<sizeX; i++)
+    {
+      for(j=0; j<sizeY; j++)
+      {
+        for(k=0; k<sizeTheta; k++)
+        {
+          tempStruct[i][j] += poseActivity1[i].array2D[j][k];
+        }
+      }
+    }
+  }
+  sumActive = tempStruct[maxActivatedCell.x][maxActivatedCell.y];
   eraseDisplay();
   nxtDrawRect(1,1,62,62);
-  nxtDisplayStringAt(64,60,"x: %2d",poseWorld.maxActivatedCell.x);
-	nxtDisplayStringAt(64,50,"y: %2d",poseWorld.maxActivatedCell.y);
-	nxtDisplayStringAt(64,40,"T: %1d",poseWorld.maxActivatedCell.theta);
-  for(x = 0; x<10; x++)
+  nxtDisplayStringAt(64,60,"x: %d",maxActivatedCell.x);
+	nxtDisplayStringAt(64,50,"y: %d",maxActivatedCell.y);
+	nxtDisplayStringAt(64,40,"T: %d",maxActivatedCell.theta);
+  for(i = 0; i<sizeX; i++)
   {
-    for(y = 0; y<10; y++)
+    for(j = 0; j<sizeY; j++)
     {
       char tempPercent = 0;
-      tempPercent = (tempStruct[x][y] / sumActive)*100;
+      tempPercent = (tempStruct[i][j] / sumActive)*100;
       if(tempPercent<=2) {}
       else if(tempPercent>2 && tempPercent<=7)
       {
-        drawRect(x,y,2);
+        drawRect(i,j,2);
       }
       else if(tempPercent>7 && tempPercent<=15)
       {
-        drawRect(x,y,15);
+        drawRect(i,j,15);
       }
       else if(tempPercent>15 && tempPercent<=25)
       {
-        drawRect(x,y,25);
+        drawRect(i,j,25);
       }
       else if(tempPercent>25 && tempPercent<=33)
       {
-        drawRect(x,y,33);
+        drawRect(i,j,33);
       }
       else if(tempPercent>33 && tempPercent<=50)
       {
-        drawRect(x,y,50);
+        drawRect(i,j,50);
       }
       else if(tempPercent>50 && tempPercent<=66)
       {
-        drawRect(x,y,66);
+        drawRect(i,j,66);
       }
       else if(tempPercent>66 && tempPercent<=75)
       {
-        drawRect(x,y,75);
+        drawRect(i,j,75);
       }
       else if(tempPercent>75 && tempPercent<=97)
       {
-        drawRect(x,y,85);
+        drawRect(i,j,85);
       }
       else if(tempPercent>97 && tempPercent<=100)
       {
-        drawRect(x,y,100);
+        drawRect(i,j,100);
       }
     }
   }
@@ -1064,27 +1198,45 @@ void sumPoseStruct()
 //----Experience Map Functions----//
 //                                //
 
+//----Set up required structures----//
+void grabData()
+{
+  memcpy(localTempView, localTemp, 2*numNeuralUnits);
+
+  //set encoderData here as well
+
+  maxActivatedCellPose.x = maxActivatedCell.x;
+  maxActivatedCellPose.y = maxActivatedCell.y;
+  maxActivatedCellPose.theta = maxActivatedCell.theta;
+}
+
 //sets experience - not sure if i really need this
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local)
 {
 	Map.experienceMap[id].ID = id;
-  memcpy(Map.experienceMap[id].odoPose,odo, 6);
+  memcpy(Map.experienceMap[id].odoPose,odo, 12);
   memcpy(Map.experienceMap[id].poseCellsPose, pose, 6);
-  memcpy(Map.experienceMap[id].localView, local,72);
+  memcpy(Map.experienceMap[id].localView, local,2*numNeuralUnits);
 }
 
 void createNewExperience(experience &newE)
 {
   //going to assume everytime a createNewExperience is called it will affect the Map.currentExperience experience cell
-	memset(newE,0,112);
-	int temp[5] = {-1,-1,-1,-1,-1}; //My null symbol
+	memset(newE,0,76);
+	//int temp[3] = {-1,-1,-1}; //My null symbol
 	newE.mapPose.x = -1; //null - not yet set up
 	newE.ID = nextID;
-	memcpy(newE.outLinks,temp,10); //initalise to null
-  memcpy(newE.inLinks,temp,10);
-	memcpy(newE.odoPose,encoderData,6);
-	memcpy(newE.poseCellsPose,maxActivatedCellPose,6);
-	memcpy(newE.localView,localTempView,72);
+	newE.outLinks[0] = -1;
+	newE.outLinks[1] = -1;
+	newE.outLinks[2] = -1;
+	newE.inLinks[0] = -1;
+	newE.inLinks[1] = -1;
+	newE.inLinks[2] = -1;
+	//memcpy(newE.outLinks,temp,6); //initalise to null
+  //memcpy(newE.inLinks,temp,6);
+	memcpy(newE.odoPose,encoderData,12);
+	memcpy(newE.poseCellsPose,maxActivatedCellPose,3);
+	memcpy(newE.localView,localTempView,2*numNeuralUnits);
 }
 
 //----Sets Outlinks and Inlinks----//
@@ -1106,7 +1258,6 @@ void setOutlinks(int linkID, experience startE, experience endE)
 	  	endE.inLinks[t] = linkID;
 	  	break;
 	  }
-
 	}
 }
 
@@ -1124,38 +1275,38 @@ void linkLastToCurrent()
   	float transitionTime = currentMeanTime - Map.lastExperienceMeanTime;
 
   	//Set up pose info and copy data into
-    vector3D currentOdoPose;
-    memcpy(currentOdoPose, Map.currentExperience.odoPose,6); // may need to memcpy
-    vector3D lastOdoPose;
-    memcpy(lastOdoPose,Map.experienceMap[Map.lastMatchedExperienceID].odoPose,6); //same as above
+    vector3DE currentOdoPose;
+    memcpy(currentOdoPose, Map.currentExperience.odoPose,12); // may need to memcpy
+    vector3DE lastOdoPose;
+    memcpy(lastOdoPose,Map.experienceMap[Map.lastMatchedExperienceID].odoPose,12); //same as above
 
     //angle to current (angle = atan(y/x))
     float angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
-    float translationAngle = lastOdoPose.theta - angleToCurrent;
+    float translationAngle = lastOdoPose.z - angleToCurrent;
 
     //translation distance (in encoder clicks)
     int translationDistance = getLength((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
 
     //relative change in rotation
-    float rotation = getRotationDegrees(lastOdoPose.theta, currentOdoPose.theta);
+    float rotation = getRotationDegrees(lastOdoPose.z, currentOdoPose.z);
 
     //therefore has not been inserted onto experience map yet
     if(Map.currentExperience.mapPose.x == -1) //null statement
     {
-      vector3D lastMapPose;
-      vector3D newMapPose;
-      memcpy(lastMapPose, Map.experienceMap[Map.lastMatchedExperienceID].mapPose, 6);
+      vector3DE lastMapPose;
+      vector3DE newMapPose;
+      memcpy(lastMapPose, Map.experienceMap[Map.lastMatchedExperienceID].mapPose, 12);
 
-      float calcsAngle = lastMapPose.theta + translationAngle;
+      float calcsAngle = lastMapPose.z + translationAngle;
       newMapPose.x = (lastMapPose.x + cosDegrees(calcsAngle) * translationDistance);
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
-      newMapPose.theta = (lastMapPose.theta + rotation);
-      memcpy(Map.currentExperience.mapPose, newMapPose, 6); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 112); //put currentExperience on the map
+      newMapPose.z = (lastMapPose.z + rotation);
+      memcpy(Map.currentExperience.mapPose, newMapPose, 12); //set up mapPose for current Experience
+      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 76); //put currentExperience on the map
     }
     char y;
     int linkNumber;
-    for(y = 0; y<5; y++)
+    for(y = 0; y<numOfLinksPerExperience; y++)
     {
       linkNumber = Map.experienceMap[Map.lastMatchedExperienceID].outLinks[y];
     	if(linkNumber != -1)
@@ -1194,7 +1345,6 @@ void linkLastToCurrent()
       memcpy(links[linkNumber], previous,12);
     }
   }
-
   //set current as previous experience
   Map.lastMatchedExperienceID = Map.currentExperience.ID;
   Map.lastExperienceMeanTime = currentMeanTime;
@@ -1204,10 +1354,9 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience, cExperience, 112); //add experience
+	memcpy(Map.currentExperience, cExperience, 76); //add experience
   Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
-
 
 //sets links --------------may need fixing
 void setLink(int startID, int endID)
@@ -1219,16 +1368,15 @@ void setLink(int startID, int endID)
 //----Compares arrays - this is due to RobotC unable to do this----//
 char compareArray(localViewCell &view1, localViewCell &view2)
 {
-	float array1[18], array2[18], nullArray[18];
-	memset(nullArray, 0, 72);
-	memcpy(array1, view1, 72);
-	memcpy(array2, view2, 72);
+	float array1[numNeuralUnits], array2[numNeuralUnits], nullArray[numNeuralUnits];
+	memset(nullArray, 0, 2*numNeuralUnits);
+	memcpy(array1, view1, 2*numNeuralUnits);
+	memcpy(array2, view2, 2*numNeuralUnits);
 
-	char x;
 	char check = 0;
-	for(x = 0; x<18; x++)
+	for(i = 0; i<numNeuralUnits; i++)
 	{
-		if(array1[x] != nullArray[x])
+		if(array1[i] != nullArray[i])
 		{
 		  check = 1; // not a null vector
 		  break;
@@ -1236,9 +1384,9 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 	}
 	if(check)
 	{
-		for(x = 0; x<18; x++)
+		for(i = 0; i<numNeuralUnits; i++)
 	  {
-		  if(array1[x] != array2[x])
+		  if(array1[i] != array2[i])
 		  {
 		    return 0; // not a null vector
 		  }
@@ -1281,7 +1429,6 @@ float compareTo(experience &experience1, experience &experience2)
   //otherwise is a measure of comparison from 0 to 1 comprised of a 0.5 contribution from theta and xy respectively
   return (2 - (sqrt(xyDistSquared) / maxAssociationRadiusXY) -
                   (thetaAbsDist / maxAssociationRadiusTheta)) * 0.5;
-
 }
 
 //this compares the current experience to previous experiences returning the closest matching experience
@@ -1290,16 +1437,16 @@ int matchExperience(experience &matchE)
 {
   float maxScore = 0;
   int closestMatch = -1;
-	char x;
-	for(x = 0; x<nextID; x++)
+	int q;
+
+  for(q = 0; q<nextID; q++)
 	{
-		float score = compareTo(matchE,Map.experienceMap[x]);
+		float score = compareTo(matchE,Map.experienceMap[q]);
 		if(score > maxScore)
 		{
-		  	closestMatch = x;
+		  	closestMatch = q;
 		  	maxScore = score;
 		}
-
 	}
 	return closestMatch;
 }
@@ -1308,41 +1455,41 @@ int matchExperience(experience &matchE)
 //So far have used floats but as all structs use ints i may be able to get away with not using floats at all. Yay to the memory savings
 void mapCorrection()
 {
-	float mapCorrectionXY = mapCorrectionRateXY * 0.5;
-	float mapCorrectionTheta = mapCorrectionRateTheta * 0.5;
+	float mapCorrectionXY = 0.5;
+	float mapCorrectionTheta = 0.5;
 
 	experience startExperience;
 	experience endExperience;
-	vector3D startPose;
-	vector3D endPose;
+	vector3DE startPose;
+	vector3DE endPose;
 	experienceLink link;
 
 	char z; //for loop
 	for(z = 0; z <(nextID-1); z++)
 	{
-		memcpy(startExperience,Map.experienceMap[z],110); //copy experience being manipulated into startExperience
-		memcpy(startPose, startExperience.mapPose, 6); //copy mapPose being manipulated into startPose
+		memcpy(startExperience,Map.experienceMap[z],76); //copy experience being manipulated into startExperience
+		memcpy(startPose, startExperience.mapPose, 12); //copy mapPose being manipulated into startPose
     char y; //for loop
     for(y = 0; y < numOfLinksPerExperience; y++)
     {
       if(startExperience.outLinks[y] != -1)
       {
         memcpy(link,links[startExperience.outLinks[y]],12);
-        memcpy(endExperience,Map.experienceMap[link.endExperienceID],110);
-        memcpy(endPose, endExperience.mapPose, 6);
+        memcpy(endExperience,Map.experienceMap[link.endExperienceID],76);
+        memcpy(endPose, endExperience.mapPose, 12);
 
         //expected position of the end experience
-        float angleToTargetEnd = startPose.theta + link.translationAngle;
+        float angleToTargetEnd = startPose.z + link.translationAngle;
         float targetEndX = startPose.x + link.translationDistance * cosDegrees(angleToTargetEnd);
         float targetEndY = startPose.y + link.translationDistance * sinDegrees(angleToTargetEnd);
 
         //expected orientation of the end experience
-        float targetEndAngle = startPose.theta + link.rotation;
+        float targetEndAngle = startPose.z + link.rotation;
 
         //Calulate the 'error' between expected and actual position of end experience
         float xError = targetEndX - endPose.x;
         float yError = targetEndY - endPose.y;
-        float thetaError = getRotationDegrees(endPose.theta,targetEndAngle);
+        float thetaError = getRotationDegrees(endPose.z,targetEndAngle);
 
         //calculate the adjustment to be made for start and end poses
         float xAdjustment = xError * mapCorrectionXY;
@@ -1352,17 +1499,17 @@ void mapCorrection()
         //Apply adjustments then copy back over previous experiences
         startPose.x -= xAdjustment;
         startPose.y -= yAdjustment;
-        startPose.theta = wrappedDegrees360(startPose.theta - thetaAdjustment);
+        startPose.z = wrappedDegrees360(startPose.z - thetaAdjustment);
 
         endPose.x += xAdjustment;
         endPose.y += yAdjustment;
-        endPose.theta = wrappedDegrees360(endPose.theta + thetaAdjustment);
+        endPose.z = wrappedDegrees360(endPose.z + thetaAdjustment);
 
-        memcpy(startExperience.mapPose, startPose, 6);
-        memcpy(Map.experienceMap[z], startExperience, 110);
+        memcpy(startExperience.mapPose, startPose, 12);
+        memcpy(Map.experienceMap[z], startExperience, 76);
 
-        memcpy(endExperience.mapPose, endPose, 6);
-        memcpy(Map.experienceMap[link.endExperienceID],endExperience,110);
+        memcpy(endExperience.mapPose, endPose, 12);
+        memcpy(Map.experienceMap[link.endExperienceID],endExperience,76);
       }
       else {break;} //leave loop faster as there are no more links
     }
@@ -1376,11 +1523,11 @@ void startUp()
   createNewExperience(startUpExperience);
   startUpExperience.mapPose.x = 0;
   startUpExperience.mapPose.y = 0;
-  startUpExperience.mapPose.theta = 0;
-  memcpy(Map.currentExperience,startUpExperience,112);
+  startUpExperience.mapPose.z = 0;
+  memcpy(Map.currentExperience,startUpExperience,76);
   Map.currentExperienceStartTime = (int) (nPgmTime/1000);
   //this is my addition - i couldn't find in the java code where the first current view was create placed on the experience map
-  memcpy(Map.experienceMap[nextID],Map.currentExperience,112);
+  memcpy(Map.experienceMap[nextID],Map.currentExperience,76);
   Map.lastMatchedExperienceID = 0;
   nextID++;
 }
@@ -1396,7 +1543,7 @@ void iterateMap(float stepSize)
     if(closestExperience != nextID)
     {
     	experience closeExperience;
-    	memcpy(closestExperience,Map.experienceMap[closestExperience],112);
+    	memcpy(closestExperience,Map.experienceMap[closestExperience],76);
     	linkExperience(closeExperience);
     }
   }
@@ -1409,12 +1556,12 @@ void iterateMap(float stepSize)
 
 void initaliseMap()
 {
-	memset(Map,0,678);
+	memset(Map,0,1245);
 	Map.lastMatchedExperienceID = -1;
-	memset(Links,0,60);
+	memset(Links,0,240);
   memset(encoderData,0,6);
-  memset(maxActivatedCellPose,0,6);
-  memset(localTempView,0,72);
+  memset(maxActivatedCellPose,0,3);
+  memset(localTempView,0,2*numNeuralUnits);
 }
 
 
@@ -1426,14 +1573,20 @@ task main ()
 	nxtDisplayCenteredTextLine(3, "Roaming");
 	nxtDisplayCenteredTextLine(5, "This is a test");
 	initialisePose(); //set up
+	initaliseMap();
+	wait10Msec(50);
+	setTemp();  //get local view
+  checkLocalCell(); //create first association
+  grabData();
+  startUp();
 	iterate(stepSize); //run excitation etc
+	wait10Msec(50);
 	currentDirection = 0; //set initial
   currentTheta = 0;
-  setTemp();  //get local view
-  checkLocalCell(); //create first association
-  datalogging();
+
+  ////datalogging();
   sumPoseStruct();
-	while(nextEmptyCell<numLocalCells)
+	while(nextID<numOfExperiences)
 	{
 		alive(); //stop NXT from sleeping
 
@@ -1444,17 +1597,22 @@ task main ()
 	  	pose3D(changeTheta,0);
 	  }
 	  else {
-	  drive(100,180,50);
-    pose3D(changeTheta,0.5);
+	    drive(100,180,50);
+      pose3D(changeTheta,0.5);
     }
-    sumPoseStruct();
+
     setTemp();
     checkLocalCell();
+    //grabData();
+    iterate(stepSize);
+    sumPoseStruct();
     //store data
-    datalogging();
+   // datalogging();
     clearEncoders(); //clear encoder count
     changeTheta=0;
   }
+  mapCorrection();
+  datalogging2();
   SaveNxtDatalog();
   PlaySound(soundException);
   while(bSoundActive){}
