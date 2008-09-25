@@ -11,10 +11,8 @@
 //----Variables and Definitions----//
 float maxAssociationRadiusXY = 0.35;
 char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
-char mapCorrectionRateXY = 1;
-char mapCorrectionRateTheta = 1;
-const char numOfExperiences = 20; //main file
-const char numOfLinksPerExperience = 20; //assuming not many links between various experiences - this could be reduced
+const char numOfExperiences = 50; //main file
+const char numOfLinksPerExperience = 3; //assuming not many links between various experiences - this could be reduced
 
 //----Structs----//
 typedef struct
@@ -26,23 +24,23 @@ typedef struct
 
 typedef struct
 {
-  char x;
-	char y;
-	char theta;
-} vector3DPose;
+  float x;
+	float y;
+	float z;
+} vector3DE;
 
 typedef struct
 {
 	//the id number of experience used for link stuff - will equal position in array - may not need this
 	int ID;
 	//where lies on map
-	vector3D mapPose; //6 bytes
+	vector3DE mapPose; //6 bytes
   //in terms of odometry from encoders
-	vector3D odoPose;  //6bytes
+	vector3DE odoPose;  //6bytes
   //in terms of pose cells
 	PoseCellPosition poseCellsPose; //3bytes
   //the local view for this experience
-	localViewCell localView; //72 bytes ---->total = 90
+	localViewCell localView; //30 bytes ---->total = 90
 	//holds the index for the experienceLink array for all experiences links for this experience to others
 	int outLinks[numOfLinksPerExperience];  //10
 	//holds the index for the experienceLink array for all experiences links for this experience to others
@@ -74,6 +72,7 @@ typedef struct
 experienceMapModule Map;
 experienceLink links[numOfExperiences];
 
+void grabData();
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local);
 void createNewExperience(experience &newE);
 void setOutlinks(char linkID, experience &startE, experience &endE);
@@ -84,5 +83,5 @@ float compareTo(experience &experience1, experience &experience2);
 int matchExperience(experience &matchE);
 void mapCorrection();
 void startUp();
-void iterateMap();
+void iterateMap(float stepSize);
 void initaliseMap();

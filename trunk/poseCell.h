@@ -13,14 +13,12 @@ const char sizeX = 10; //number of cells in X dimension
 const char sizeY = 10; //number of cells in Y dimension
 const char sizeTheta = 6; //number of cells in theta dimension
 
-char startActivation = 0.5; //the starting activation of the first cell
 char influenceXY = 1; // the level of influence that cells have on neighbouring cells
 char influenceTheta = 1;
 float weightVarianceXY = 0.8;//for gaussian distribution stuff
 float weightVarianceTheta = 0.5;//for gaussian distribution stuff
 char weightScaleFactor = 14; //strength of influence between cells
 float stepSize = 0.2; //this is to account for something
-float globalInhibition = 0.014;//0.014
 char poseEstimationRadius = 6;
 float injectionStrength = 0.075;
 int numberOfCells = 4*sizeTheta*sizeX*sizeY;
@@ -44,6 +42,14 @@ typedef struct {
 	char theta;
 } PoseCellPosition;
 
+//Represents the max cell
+typedef struct {
+	char x;
+	char y;
+	char theta;
+	float act;
+} maxCellPosition;
+
 //matrix used for holding pose activity
 typedef struct {
 	float array2D[sizeY][sizeTheta]; //using an array of structures to create [][][]
@@ -59,26 +65,25 @@ typedef struct {
 	float array2D[2][2];
 } matrixDistribution;
 
-//the pose environment
 typedef struct {
-	matrixPoseActivity poseActivity[sizeX];
-	PoseCellPosition maxActivatedCell;
-} PoseCellStructure;
-
-typedef struct {
-	int localView[15];
+	int localView[numNeuralUnits];
   char xCell;
   char yCell;
   char thetaCell;
 } cellAssociation;
 
 //initalise structures
-PoseCellStructure poseWorld;
+//PoseCellStructure poseWorld;
 matrixExcite excitation_Weights[3];
 matrixDistribution distribution[2];
-matrixPoseActivity tempPose[sizeX];
+
+//formly poseCellStructure
+matrixPoseActivity poseActivity1[sizeX];
+matrixPoseActivity poseActivity2[sizeX];
+maxCellPosition maxActivatedCell;
+
 PoseCellPosition position;
-cellAssociation poseAssoc[70];
+cellAssociation poseAssoc[numLocalCells];
 
 //----Initialises functions----//
 void startCell();

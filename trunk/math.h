@@ -1,7 +1,7 @@
 //////this c file just holds math functions useful to use with ratSLAM///////
 
 //get Degrees
-int getDegrees(int angle)
+int getDegrees(float angle)
 {
   return (int) (angle * 180/PI);
 }
