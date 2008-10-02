@@ -575,7 +575,7 @@ void pose3D(float deltaTheta, float translation)
   //initialise loop variables
   deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
   deltaPoseY = (sinDegrees(currentDirection) * translation) / 0.5; //(lengthX / sizeX);
-	deltaPoseTheta = deltaTheta / 76;//(360 / sizeTheta);
+	deltaPoseTheta = deltaTheta / 72;//(360 / sizeTheta);
 
   intOffsetX = (int) deltaPoseX; //only a whole number of cells moved
   intOffsetY = (int) deltaPoseY;
@@ -648,7 +648,7 @@ void drive(char synchRatio, int travelDistance, char speed)
   nMotorEncoderTarget[motorB] = travelDistance;
 	motor[motorB] = speed;
   while(nMotorRunState[motorB] != runStateIdle) {}
-  changeTheta = getRotation();
+  //changeTheta = getRotation();
   currentDirection += changeTheta;
   if(currentDirection > 360)
   {
@@ -1065,23 +1065,27 @@ void doTurn()
 	{
 	  if(leftSonarValue > 19 && rightSonarValue < 19)
 	  {
-      drive(100,190,-40);
+      //drive(100,190,-40);
       drive(-100,190,-40);
+      changeTheta = 90;
 	  }
 		else if(leftSonarValue < 19 && rightSonarValue > 19)
 	  {
-	  	drive(100,190,-40);
+	  	//drive(100,190,-40);
 	    drive(-100,190,40);
+	    changeTheta = -90;
 	  }
 		else if(leftSonarValue < 19 && rightSonarValue < 19)
 	  {
 	  	drive(100,190,-40);
 	  	drive(-100,370,40);
+	  	changeTheta = 180;
 	   }
 	  else
 	  {
-	  	drive(100,190,-40);
+	  	//drive(100,190,-40);
       drive(-100,190,-40);
+      changeTheta = 90;
 	  }
   }
 }
@@ -1107,6 +1111,29 @@ void datalogging2()
 	  AddToDatalog(1,d1);
     AddToDatalog(2,d2);
     AddToDatalog(3,d3);
+  }
+  AddToDatalog(4,0);
+}
+
+void datalogging3()
+{
+	int data;
+	for(data = 0; data<numOfExperiences; data++)
+	{
+		int d1 = (int) Map.experienceMap[data].outLinks[0];
+		int d2 = (int) Map.experienceMap[data].outLinks[1];
+		//int d3 = (int) Map.experienceMap[data].outLinks[2];
+
+		int d4 = (int) Map.experienceMap[data].inLinks[0];
+		int d5 = (int) Map.experienceMap[data].inLinks[1];
+	//	int d6 = (int) Map.experienceMap[data].inLinks[2];
+
+	  AddToDatalog(5,d1);
+    AddToDatalog(5,d2);
+   // AddToDatalog(5,d3);
+    AddToDatalog(6,d4);
+    AddToDatalog(6,d5);
+   // AddToDatalog(6,d6);
   }
 }
 
@@ -1202,9 +1229,6 @@ void sumPoseStruct()
 void grabData()
 {
   memcpy(localTempView, localTemp, 2*numNeuralUnits);
-
-  //set encoderData here as well
-
   maxActivatedCellPose.x = maxActivatedCell.x;
   maxActivatedCellPose.y = maxActivatedCell.y;
   maxActivatedCellPose.theta = maxActivatedCell.theta;
@@ -1222,16 +1246,16 @@ void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local)
 void createNewExperience(experience &newE)
 {
   //going to assume everytime a createNewExperience is called it will affect the Map.currentExperience experience cell
-	memset(newE,0,76);
+	memset(newE,0,72);
 	//int temp[3] = {-1,-1,-1}; //My null symbol
 	newE.mapPose.x = -1; //null - not yet set up
 	newE.ID = nextID;
 	newE.outLinks[0] = -1;
 	newE.outLinks[1] = -1;
-	newE.outLinks[2] = -1;
+//	newE.outLinks[2] = -1;
 	newE.inLinks[0] = -1;
 	newE.inLinks[1] = -1;
-	newE.inLinks[2] = -1;
+//	newE.inLinks[2] = -1;
 	//memcpy(newE.outLinks,temp,6); //initalise to null
   //memcpy(newE.inLinks,temp,6);
 	memcpy(newE.odoPose,encoderData,12);
@@ -1302,7 +1326,7 @@ void linkLastToCurrent()
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
       newMapPose.z = (lastMapPose.z + rotation);
       memcpy(Map.currentExperience.mapPose, newMapPose, 12); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 76); //put currentExperience on the map
+      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 72); //put currentExperience on the map
     }
     char y;
     int linkNumber;
@@ -1354,7 +1378,7 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience, cExperience, 76); //add experience
+	memcpy(Map.currentExperience, cExperience, 72); //add experience
   Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
@@ -1467,7 +1491,7 @@ void mapCorrection()
 	char z; //for loop
 	for(z = 0; z <(nextID-1); z++)
 	{
-		memcpy(startExperience,Map.experienceMap[z],76); //copy experience being manipulated into startExperience
+		memcpy(startExperience,Map.experienceMap[z],72); //copy experience being manipulated into startExperience
 		memcpy(startPose, startExperience.mapPose, 12); //copy mapPose being manipulated into startPose
     char y; //for loop
     for(y = 0; y < numOfLinksPerExperience; y++)
@@ -1475,7 +1499,7 @@ void mapCorrection()
       if(startExperience.outLinks[y] != -1)
       {
         memcpy(link,links[startExperience.outLinks[y]],12);
-        memcpy(endExperience,Map.experienceMap[link.endExperienceID],76);
+        memcpy(endExperience,Map.experienceMap[link.endExperienceID],72);
         memcpy(endPose, endExperience.mapPose, 12);
 
         //expected position of the end experience
@@ -1506,10 +1530,10 @@ void mapCorrection()
         endPose.z = wrappedDegrees360(endPose.z + thetaAdjustment);
 
         memcpy(startExperience.mapPose, startPose, 12);
-        memcpy(Map.experienceMap[z], startExperience, 76);
+        memcpy(Map.experienceMap[z], startExperience, 72);
 
         memcpy(endExperience.mapPose, endPose, 12);
-        memcpy(Map.experienceMap[link.endExperienceID],endExperience,76);
+        memcpy(Map.experienceMap[link.endExperienceID],endExperience,72);
       }
       else {break;} //leave loop faster as there are no more links
     }
@@ -1524,10 +1548,10 @@ void startUp()
   startUpExperience.mapPose.x = 0;
   startUpExperience.mapPose.y = 0;
   startUpExperience.mapPose.z = 0;
-  memcpy(Map.currentExperience,startUpExperience,76);
+  memcpy(Map.currentExperience,startUpExperience,72);
   Map.currentExperienceStartTime = (int) (nPgmTime/1000);
   //this is my addition - i couldn't find in the java code where the first current view was create placed on the experience map
-  memcpy(Map.experienceMap[nextID],Map.currentExperience,76);
+  memcpy(Map.experienceMap[nextID],Map.currentExperience,72);
   Map.lastMatchedExperienceID = 0;
   nextID++;
 }
@@ -1543,7 +1567,7 @@ void iterateMap(float stepSize)
     if(closestExperience != nextID)
     {
     	experience closeExperience;
-    	memcpy(closestExperience,Map.experienceMap[closestExperience],76);
+    	memcpy(closestExperience,Map.experienceMap[closestExperience],72);
     	linkExperience(closeExperience);
     }
   }
@@ -1566,8 +1590,22 @@ void initaliseMap()
 
 
 //            //
-//----Main----//
+//----Tasks----//
 //            //
+task SLAM()
+{
+	  pose3D(changeTheta, 0.5);
+    currentDirection += changeTheta;
+    setTemp();
+    checkLocalCell();
+    iterate(stepSize);
+    mapCorrection();
+    sumPoseStruct();
+    clearEncoders(); //clear encoder count
+    changeTheta=0;
+    mapCorrection();
+}
+
 task main ()
 {
 	nxtDisplayCenteredTextLine(3, "Roaming");
@@ -1592,19 +1630,25 @@ task main ()
 		alive(); //stop NXT from sleeping
 
     float centreSonarValue = SensorValue(centreSonar);
-    if(centreSonarValue<19)
-	  {
-	  	doTurn();
-	  	pose3D(changeTheta,0);
-	  }
-	  else {
-	    drive(100,200,40);
-      pose3D(changeTheta,0.5);
+    while(centreSonarValue<19)
+    {
+      if(centreSonarValue<19)
+	    {
+	  	  doTurn();
+	  	  pose3D(changeTheta,0);
+	    }
+	    else
+	    {
+	      drive(100,200,40);
+	      if(nPgmTime % 3.2)
+	      {
+          SLAM();
+        }
+       }
     }
-
+    currentDirection += changeTheta;
     setTemp();
     checkLocalCell();
-    //grabData();
     iterate(stepSize);
     mapCorrection();
     sumPoseStruct();
@@ -1613,8 +1657,10 @@ task main ()
     clearEncoders(); //clear encoder count
     changeTheta=0;
   }
+  //datalogging2();
   mapCorrection();
   datalogging2();
+  //datalogging3();
   SaveNxtDatalog();
   PlaySound(soundException);
   while(bSoundActive){}
