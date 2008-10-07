@@ -12,7 +12,7 @@
 float maxAssociationRadiusXY = 0.35;
 char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
 const char numOfExperiences = 55; //main file
-const char numOfLinksPerExperience = 2; //assuming not many links between various experiences - this could be reduced
+const char numOfLinksPerExperience = 3; //assuming not many links between various experiences - this could be reduced
 
 //----Structs----//
 typedef struct
@@ -42,9 +42,9 @@ typedef struct
   //the local view for this experience
 	localViewCell localView; //30 bytes ---->total = 90
 	//holds the index for the experienceLink array for all experiences links for this experience to others
-	int outLinks[numOfLinksPerExperience];  //10
+	char outLinks[numOfLinksPerExperience];  //10
 	//holds the index for the experienceLink array for all experiences links for this experience to others
-	int inLinks[numOfLinksPerExperience]; //10
+	char inLinks[numOfLinksPerExperience]; //10
 	//for moment assuming only max of 5 links
 } experience;
 

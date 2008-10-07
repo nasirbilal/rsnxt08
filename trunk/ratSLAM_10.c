@@ -47,6 +47,16 @@ PoseCellPosition maxActivatedCellPose;
 localViewCell localTempView;
 float averageEncoder = 0;
 
+//trial
+typedef enum
+{
+  stateRun,
+  stateStop,
+} TStates;
+
+TStates nCurrState;
+TStates nWallState;
+
 //----Specific global variables for functions (in an attempt to save memory :))----//
 //path integratation
 float deltaPoseX;/// (lengthX / sizeX);
@@ -73,6 +83,14 @@ char relativeTheta;
 int rightSonarValue = 0;
 int leftSonarValue = 0;
 int centreSonarValue = 0;
+
+//Wall Follower
+int desiredLeft = 15;
+int desiredSpeed = 25;
+float kW = 40;
+float alpha = 0.5;
+float beta1 = kW/(desiredSpeed);
+float beta0 = alpha * beta1;
 //                           //
 //----Pose Cell Functions----//
 //                           //
@@ -559,12 +577,14 @@ void initialisePose()
 //----handles all cell stuff----//
 void iterate(float stepSize)
 {
-	averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
 	float activeSum;
 	doExcitation(stepSize);
   activeSum = doInhibition(stepSize);
   doNormalisation(activeSum);
-  setEncoderData(currentDirection);
+}
+
+void iterateExperience(float stepSize)
+{
   grabData();
   iterateMap(stepSize);
 }
@@ -575,7 +595,7 @@ void pose3D(float deltaTheta, float translation)
   //initialise loop variables
   deltaPoseX = (cosDegrees(currentDirection) * translation) / 0.5;/// (lengthX / sizeX);
   deltaPoseY = (sinDegrees(currentDirection) * translation) / 0.5; //(lengthX / sizeX);
-	deltaPoseTheta = deltaTheta / 72;//(360 / sizeTheta);
+	deltaPoseTheta = deltaTheta / 60;//(360 / sizeTheta);
 
   intOffsetX = (int) deltaPoseX; //only a whole number of cells moved
   intOffsetY = (int) deltaPoseY;
@@ -622,42 +642,6 @@ void pose3D(float deltaTheta, float translation)
     }
   }
   changeRead();
-}
-/*
-//----Display Max Activated cell----//
-void displayMax()
-{
-	char tempX, tempY, tempTheta;
-  tempX = (char) poseWorld.maxActivatedCell.x;
-  tempY = (char) poseWorld.maxActivatedCell.y;
-  tempTheta = (char) poseWorld.maxActivatedCell.theta;
-	eraseDisplay();
-  nxtDisplayTextLine(1, "pose: %2d,%2d", tempX, tempY);
-  nxtDisplayStringAt(76, 55, ",%2d", tempTheta);
-}
-*/
-//----test drives----//
-void drive(char synchRatio, int travelDistance, char speed)
-{
-	//note a 90 degree turn is ~190 encoders clicks
-	clearEncoders();
-	nSyncedMotors = synchBC;
-	nSyncedTurnRatio = synchRatio;
-	nMotorPIDSpeedCtrl[motorB] = mtrEncoderReg;
-	//nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
-  nMotorEncoderTarget[motorB] = travelDistance;
-	motor[motorB] = speed;
-  while(nMotorRunState[motorB] != runStateIdle) {}
-  //changeTheta = getRotation();
-  currentDirection += changeTheta;
-  if(currentDirection > 360)
-  {
-  	currentDirection -= 360;
-  }
-  else if(currentDirection < 0)
-  {
-  	currentDirection += 360;
-  }
 }
 
 void drawRect(char xCo, char yCo, char percent)
@@ -1052,43 +1036,7 @@ void checkLocalCell()
   }
 }
 
-//----Turns if need to----//
-void doTurn()
-{
-//part of the testing reigme of the local cells
-	//decided that anticlockwise is positive
-	rightSonarValue = SensorValue(rightSonar); //obvious
-  leftSonarValue = SensorValue(leftSonar);
-  centreSonarValue = SensorValue(centreSonar);
 
-	if(centreSonarValue<19)
-	{
-	  if(leftSonarValue > 19 && rightSonarValue < 19)
-	  {
-      //drive(100,190,-40);
-      drive(-100,190,-40);
-      changeTheta = 90;
-	  }
-		else if(leftSonarValue < 19 && rightSonarValue > 19)
-	  {
-	  	//drive(100,190,-40);
-	    drive(-100,190,40);
-	    changeTheta = -90;
-	  }
-		else if(leftSonarValue < 19 && rightSonarValue < 19)
-	  {
-	  	drive(100,190,-40);
-	  	drive(-100,370,40);
-	  	changeTheta = 180;
-	   }
-	  else
-	  {
-	  	//drive(100,190,-40);
-      drive(-100,190,-40);
-      changeTheta = 90;
-	  }
-  }
-}
 
 //----Logs data - for testing only----//
 void datalogging()
@@ -1114,6 +1062,40 @@ void datalogging2()
   }
   AddToDatalog(4,0);
 }
+
+void datalogging4()
+{
+	int data;
+	for(data = 0; data<=10; data++)
+	{
+		int d1 = (int) Map.experienceMap[data].mapPose.x;
+		int d2 = (int) Map.experienceMap[data].mapPose.y;
+		int d3 = (int) Map.experienceMap[data].mapPose.z;
+
+	  AddToDatalog(1,d1);
+    AddToDatalog(2,d2);
+    AddToDatalog(3,d3);
+  }
+  AddToDatalog(4,0);
+   AddToDatalog(4,0);
+    AddToDatalog(4,0);
+}
+void datalogging5()
+{
+	int data;
+	for(data = 0; data<=10; data++)
+	{
+		int d1 = (int) Map.experienceMap[data].odoPose.x;
+		int d2 = (int) Map.experienceMap[data].odoPose.y;
+		int d3 = (int) Map.experienceMap[data].odoPose.z;
+
+	  AddToDatalog(1,d1);
+    AddToDatalog(2,d2);
+    AddToDatalog(3,d3);
+  }
+  AddToDatalog(4,0);
+}
+
 
 void datalogging3()
 {
@@ -1235,18 +1217,18 @@ void grabData()
 }
 
 //sets experience - not sure if i really need this
-void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local)
+void setExperience(char id, vector3DE &odo, PoseCellPosition &pose, localViewCell &local)
 {
 	Map.experienceMap[id].ID = id;
   memcpy(Map.experienceMap[id].odoPose,odo, 12);
-  memcpy(Map.experienceMap[id].poseCellsPose, pose, 6);
+  memcpy(Map.experienceMap[id].poseCellsPose, pose, 3);
   memcpy(Map.experienceMap[id].localView, local,2*numNeuralUnits);
 }
 
 void createNewExperience(experience &newE)
 {
   //going to assume everytime a createNewExperience is called it will affect the Map.currentExperience experience cell
-	memset(newE,0,72);
+	memset(newE,0,68);
 	//int temp[3] = {-1,-1,-1}; //My null symbol
 	newE.mapPose.x = -1; //null - not yet set up
 	newE.ID = nextID;
@@ -1264,7 +1246,7 @@ void createNewExperience(experience &newE)
 }
 
 //----Sets Outlinks and Inlinks----//
-void setOutlinks(int linkID, experience startE, experience endE)
+void setOutlinks(char linkID, experience startE, experience endE)
 {
 	char t; //for loop
 	for(t = 0; t<numOfLinksPerExperience; t++)
@@ -1326,7 +1308,7 @@ void linkLastToCurrent()
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
       newMapPose.z = (lastMapPose.z + rotation);
       memcpy(Map.currentExperience.mapPose, newMapPose, 12); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 72); //put currentExperience on the map
+      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 68); //put currentExperience on the map
     }
     char y;
     int linkNumber;
@@ -1378,12 +1360,12 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience, cExperience, 72); //add experience
+	memcpy(Map.currentExperience, cExperience, 68); //add experience
   Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
 //sets links --------------may need fixing
-void setLink(int startID, int endID)
+void setLink(char startID, char endID)
 {
   links[nextLink].startExperienceID = startID;
   links[nextLink].endExperienceID = endID;
@@ -1431,10 +1413,10 @@ float compareTo(experience &experience1, experience &experience2)
 	}
 
 	//2nd test
-	vector3D thisPose;
-	vector3D otherPose;
-	memcpy(thisPose, experience1.poseCellsPose, 6);
-	memcpy(otherPose, experience2.poseCellsPose, 6);
+  PoseCellPosition thisPose;
+	PoseCellPosition otherPose;
+	memcpy(thisPose, experience1.poseCellsPose, 3);
+	memcpy(otherPose, experience2.poseCellsPose, 3);
   char thetaAbsDist = abs(thisPose.theta - otherPose.theta);
   if(thetaAbsDist > maxAssociationRadiusTheta)
   {
@@ -1491,7 +1473,7 @@ void mapCorrection()
 	char z; //for loop
 	for(z = 0; z <(nextID-1); z++)
 	{
-		memcpy(startExperience,Map.experienceMap[z],72); //copy experience being manipulated into startExperience
+		memcpy(startExperience,Map.experienceMap[z],68); //copy experience being manipulated into startExperience
 		memcpy(startPose, startExperience.mapPose, 12); //copy mapPose being manipulated into startPose
     char y; //for loop
     for(y = 0; y < numOfLinksPerExperience; y++)
@@ -1499,7 +1481,7 @@ void mapCorrection()
       if(startExperience.outLinks[y] != -1)
       {
         memcpy(link,links[startExperience.outLinks[y]],12);
-        memcpy(endExperience,Map.experienceMap[link.endExperienceID],72);
+        memcpy(endExperience,Map.experienceMap[link.endExperienceID],68);
         memcpy(endPose, endExperience.mapPose, 12);
 
         //expected position of the end experience
@@ -1530,10 +1512,10 @@ void mapCorrection()
         endPose.z = wrappedDegrees360(endPose.z + thetaAdjustment);
 
         memcpy(startExperience.mapPose, startPose, 12);
-        memcpy(Map.experienceMap[z], startExperience, 72);
+        memcpy(Map.experienceMap[z], startExperience, 68);
 
         memcpy(endExperience.mapPose, endPose, 12);
-        memcpy(Map.experienceMap[link.endExperienceID],endExperience,72);
+        memcpy(Map.experienceMap[link.endExperienceID],endExperience,68);
       }
       else {break;} //leave loop faster as there are no more links
     }
@@ -1548,10 +1530,10 @@ void startUp()
   startUpExperience.mapPose.x = 0;
   startUpExperience.mapPose.y = 0;
   startUpExperience.mapPose.z = 0;
-  memcpy(Map.currentExperience,startUpExperience,72);
+  memcpy(Map.currentExperience,startUpExperience,68);
   Map.currentExperienceStartTime = (int) (nPgmTime/1000);
   //this is my addition - i couldn't find in the java code where the first current view was create placed on the experience map
-  memcpy(Map.experienceMap[nextID],Map.currentExperience,72);
+  memcpy(Map.experienceMap[nextID],Map.currentExperience,68);
   Map.lastMatchedExperienceID = 0;
   nextID++;
 }
@@ -1566,8 +1548,9 @@ void iterateMap(float stepSize)
   {
     if(closestExperience != nextID)
     {
+    	nxtDisplayCenteredBigTextLine(4, "Match: %d", closestExperience);
     	experience closeExperience;
-    	memcpy(closestExperience,Map.experienceMap[closestExperience],72);
+    	memcpy(closestExperience,Map.experienceMap[closestExperience],68);
     	linkExperience(closeExperience);
     }
   }
@@ -1580,10 +1563,10 @@ void iterateMap(float stepSize)
 
 void initaliseMap()
 {
-	memset(Map,0,1245);
+	memset(Map,0,3816);
 	Map.lastMatchedExperienceID = -1;
-	memset(Links,0,240);
-  memset(encoderData,0,6);
+	memset(Links,0,660);
+  memset(encoderData,0,12);
   memset(maxActivatedCellPose,0,3);
   memset(localTempView,0,2*numNeuralUnits);
 }
@@ -1592,75 +1575,236 @@ void initaliseMap()
 //            //
 //----Tasks----//
 //            //
-task SLAM()
+task everything()
 {
+	nCurrState = stateRun;
+	eraseDisplay();
+	if(changeTheta>0)
+  {
 	  pose3D(changeTheta, 0.5);
-    currentDirection += changeTheta;
-    setTemp();
-    checkLocalCell();
-    iterate(stepSize);
-    mapCorrection();
-    sumPoseStruct();
-    clearEncoders(); //clear encoder count
-    changeTheta=0;
-    mapCorrection();
+	}
+	else
+	{
+	  pose3D(changeTheta, 0);
+	}
+	currentDirection += changeTheta;
+
+  setEncoderData(currentDirection);
+  clearEncoders();
+  checkLocalCell();
+	iterate(stepSize);
+  //sumPoseStruct();
+  changeTheta=0;
+  iterateExperience(stepSize);
+  mapCorrection();
+  nCurrState = stateStop;
+  nxtDisplayCenteredBigTextLine(2, "ID: %d", nextID);
+}
+
+task wall()
+{
+	nWallState = stateRun;
+	leftSonarValue = SensorValue[leftSonar];
+	centreSonarValue = SensorValue[centreSonar];
+	rightSonarValue = SensorValue(rightSonar); //obvious
+	if(centreSonarValue < 19)
+	{
+		averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
+		motor[motorB] = 0;
+    motor[motorC] = 0;
+
+	  if(leftSonarValue > rightSonarValue)
+	  {
+      nSyncedMotors = synchBC;
+  	  nSyncedTurnRatio = -100;
+  	  nMotorEncoderTarget[motorB] = 200;
+  	  motor[motorB] = -desiredSpeed;
+    	while(nMotorRunState[motorB] != runStateIdle)
+    	{
+    	 // if(nMotorEncoder[motorB] >= 200) {break;}
+    	}
+    	motor[motorB] = 0;
+      nSyncedMotors = synchNone;
+      changeTheta = 90;
+
+	  }
+		else if(leftSonarValue < rightSonarValue)
+	  {
+	  	nSyncedMotors = synchBC;
+    	nSyncedTurnRatio = -100;
+  	  nMotorEncoderTarget[motorB] = 200;
+  	  motor[motorB] = desiredSpeed;
+  	  while(nMotorRunState[motorB] != runStateIdle)
+    	{
+    	//  if(nMotorEncoder[motorB] >= 200) {break;}
+    	}
+    	 motor[motorB] = 0;
+      nSyncedMotors = synchNone;
+	    changeTheta = -90;
+	  }
+		else if(leftSonarValue < 19 && rightSonarValue < 19)
+	  {
+	  	nSyncedMotors = synchBC;
+    	nSyncedTurnRatio = -100;
+    	nMotorEncoderTarget[motorB] = 400;
+    	motor[motorB] = desiredSpeed;
+      while(nMotorRunState[motorB] != runStateIdle)
+    	{
+    	  //if(nMotorEncoder[motorB] >= 200) {break;}
+    	}
+    	 motor[motorB] = 0;
+      nSyncedMotors = synchNone;
+	  	changeTheta = 180;
+	   }
+	  else
+	  {
+	  	nSyncedMotors = synchBC;
+  	  nSyncedTurnRatio = -100;
+  	  nMotorEncoderTarget[motorB] = 200;
+  	  motor[motorB] = -desiredSpeed;
+      while(nMotorRunState[motorB] != runStateIdle)
+    	{
+    	  //if(nMotorEncoder[motorB] >= 200) {break;}
+    	}
+    	motor[motorB] = 0;
+      nSyncedMotors = synchNone;
+      changeTheta = 90;
+	  }
+    	setTemp();
+	  if(nCurrState == stateStop)
+	  {
+      StartTask(everything);
+      ClearTimer(T2);
+    }
+    else
+    {
+      while(nCurrState = stateRun) {}
+    	StartTask(everything);
+    	ClearTimer(T2);
+    }
+	}
+	else
+	{
+		if(leftSonarValue < 30)
+	  {
+		  int distanceError = leftSonarValue-desiredLeft;
+	    float angV = ((-kW*(distanceError))/(desiredSpeed)) - (beta0 + beta1*distanceError);
+		  if(angV > (desiredSpeed-5))
+		  {
+		    angV = desiredSpeed-5;
+		  }
+		  else if(angV <(-desiredSpeed+5))
+	    {
+	      angV = -desiredSpeed+5;
+	    }
+	    motor[motorB] = (int) desiredSpeed + angV;
+		  motor[motorC] = (int) desiredSpeed - angV;
+		  wait1Msec(50); //100
+		  motor[motorB] = (int) desiredSpeed - angV;
+		  motor[motorC] = (int) desiredSpeed + angV;
+		  wait1Msec(25); //50
+		  motor[motorB] = (int) desiredSpeed;
+		  motor[motorC] = (int) desiredSpeed;
+		  averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
+		  	setTemp();
+		}
+		else
+		{
+			motor[motorB] = 0;
+	  	motor[motorC] = 0;
+	  	averageEncoder = (int) ((nMotorEncoder[motorA] + nMotorEncoder[motorB])/2)+200;
+	  	nSyncedMotors = synchBC;
+	  	nSyncedTurnRatio = 100;
+	  	nMotorEncoderTarget[motorB] = 200;
+	  	motor[motorB] = desiredSpeed;
+	  	while(nMotorRunState[motorB] != runStateIdle) {};
+  	  nSyncedTurnRatio = -100;
+  	  nMotorEncoderTarget[motorB] = 200;
+  	  motor[motorB] = -desiredSpeed;
+    	while(nMotorRunState[motorB] != runStateIdle)
+    	{
+    	 // if(nMotorEncoder[motorB] >= 200) {break;}
+    	}
+    		setTemp();
+    	motor[motorB] = 0;
+      nSyncedMotors = synchNone;
+      changeTheta = 90;
+	  	nSyncedMotors = synchBC;
+	  	nSyncedTurnRatio = 100;
+	  	leftSonarValue = SensorValue[leftSonar];
+	    while(leftSonarValue > 30)
+	    {
+	  	  motor[motorB] = desiredSpeed;
+	  	  leftSonarValue = SensorValue[leftSonar];
+	    }
+	    motor[motorB] = 0;
+	  	nSyncedMotors = synchNone;
+	  	motor[motorB] = (int) desiredSpeed;
+		  motor[motorC] = (int) desiredSpeed;
+		}
+	  if(time100[T2] >= 35 && nCurrState == stateStop)
+  	{
+  		//StopTask(wall);
+
+  		StartTask(everything);
+  	  ClearTimer(T2);
+  	}
+	}
+	nWallState = stateStop;
 }
 
 task main ()
 {
-	nxtDisplayCenteredTextLine(3, "Roaming");
+	nxtDisplayCenteredTextLine(3, "Roaming-9");
 	nxtDisplayCenteredTextLine(5, "This is a test");
 	initialisePose(); //set up
 	initaliseMap();
 	wait10Msec(50);
 	setTemp();  //get local view
   checkLocalCell(); //create first association
-  grabData();
   startUp();
 	iterate(stepSize); //run excitation etc
-	mapCorrection();
-	wait10Msec(50);
+	//iterateExperience(stepSize);
+//	mapCorrection();
 	currentDirection = 0; //set initial
   currentTheta = 0;
-
-  ////datalogging();
-  sumPoseStruct();
-	while(nextID<numOfExperiences)
+  //sumPoseStruct();
+	wait10Msec(50);
+  ClearTimer(T1);
+  ClearTimer(T2);
+  nSyncedMotors = synchNone;
+  motor[motorB] = desiredSpeed;
+  motor[motorC] = desiredSpeed;
+  nCurrState = stateStop;
+  nWallState = stateStop;
+	while(nextID<=7)
 	{
 		alive(); //stop NXT from sleeping
 
-    float centreSonarValue = SensorValue(centreSonar);
-    while(centreSonarValue<19)
-    {
-      if(centreSonarValue<19)
-	    {
-	  	  doTurn();
-	  	  pose3D(changeTheta,0);
-	    }
-	    else
-	    {
-	      drive(100,200,40);
-	      if(nPgmTime % 3.2)
-	      {
-          StartTask(SLAM);
-        }
-       }
-    }
-    currentDirection += changeTheta;
-    setTemp();
-    checkLocalCell();
-    iterate(stepSize);
-    mapCorrection();
-    sumPoseStruct();
-    //store data
-   // datalogging();
-    clearEncoders(); //clear encoder count
-    changeTheta=0;
+    if(time100[T1] >= 5 && nWallState == stateStop)
+  	{
+  	  StartTask(wall);
+  		ClearTimer(T1);
+  	}
+  /*	if(time100[T2] >= 35 && nCurrState = stateStop)
+  	{
+  		//StopTask(wall);
+  	  StartTask(everything);
+  	  ClearTimer(T2);
+  	}*/
   }
-  //datalogging2();
+//nCurrentTask =
+  //Problems
+  /*
+    Seems that when do turn starts the task(everything) something weird happens.
+
+
+
+  */
+  //
   mapCorrection();
-  datalogging2();
-  //datalogging3();
+  datalogging4();
+  datalogging5();
   SaveNxtDatalog();
   PlaySound(soundException);
   while(bSoundActive){}

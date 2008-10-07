@@ -73,6 +73,14 @@ char relativeTheta;
 int rightSonarValue = 0;
 int leftSonarValue = 0;
 int centreSonarValue = 0;
+
+//Wall Follower
+int desiredLeft = 15;
+int desiredSpeed = 25;
+float kW = 40;
+float alpha = 0.5;
+float beta1 = kW/(desiredSpeed);
+float beta0 = alpha * beta1;
 //                           //
 //----Pose Cell Functions----//
 //                           //
@@ -559,12 +567,14 @@ void initialisePose()
 //----handles all cell stuff----//
 void iterate(float stepSize)
 {
-	averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
 	float activeSum;
 	doExcitation(stepSize);
   activeSum = doInhibition(stepSize);
   doNormalisation(activeSum);
-  setEncoderData(currentDirection);
+}
+
+void iterateExperience(float stepSize)
+{
   grabData();
   iterateMap(stepSize);
 }
@@ -623,19 +633,8 @@ void pose3D(float deltaTheta, float translation)
   }
   changeRead();
 }
-/*
-//----Display Max Activated cell----//
-void displayMax()
-{
-	char tempX, tempY, tempTheta;
-  tempX = (char) poseWorld.maxActivatedCell.x;
-  tempY = (char) poseWorld.maxActivatedCell.y;
-  tempTheta = (char) poseWorld.maxActivatedCell.theta;
-	eraseDisplay();
-  nxtDisplayTextLine(1, "pose: %2d,%2d", tempX, tempY);
-  nxtDisplayStringAt(76, 55, ",%2d", tempTheta);
-}
-*/
+
+
 //----test drives----//
 void drive(char synchRatio, int travelDistance, char speed)
 {
@@ -1052,43 +1051,7 @@ void checkLocalCell()
   }
 }
 
-//----Turns if need to----//
-void doTurn()
-{
-//part of the testing reigme of the local cells
-	//decided that anticlockwise is positive
-	rightSonarValue = SensorValue(rightSonar); //obvious
-  leftSonarValue = SensorValue(leftSonar);
-  centreSonarValue = SensorValue(centreSonar);
 
-	if(centreSonarValue<19)
-	{
-	  if(leftSonarValue > 19 && rightSonarValue < 19)
-	  {
-      //drive(100,190,-40);
-      drive(-100,190,-40);
-      changeTheta = 90;
-	  }
-		else if(leftSonarValue < 19 && rightSonarValue > 19)
-	  {
-	  	//drive(100,190,-40);
-	    drive(-100,190,40);
-	    changeTheta = -90;
-	  }
-		else if(leftSonarValue < 19 && rightSonarValue < 19)
-	  {
-	  	drive(100,190,-40);
-	  	drive(-100,370,40);
-	  	changeTheta = 180;
-	   }
-	  else
-	  {
-	  	//drive(100,190,-40);
-      drive(-100,190,-40);
-      changeTheta = 90;
-	  }
-  }
-}
 
 //----Logs data - for testing only----//
 void datalogging()
@@ -1103,6 +1066,22 @@ void datalogging2()
 {
 	int data;
 	for(data = 0; data<numOfExperiences; data++)
+	{
+		int d1 = (int) Map.experienceMap[data].mapPose.x;
+		int d2 = (int) Map.experienceMap[data].mapPose.y;
+		int d3 = (int) Map.experienceMap[data].mapPose.z;
+
+	  AddToDatalog(1,d1);
+    AddToDatalog(2,d2);
+    AddToDatalog(3,d3);
+  }
+  AddToDatalog(4,0);
+}
+
+void datalogging4()
+{
+	int data;
+	for(data = 0; data<=10; data++)
 	{
 		int d1 = (int) Map.experienceMap[data].mapPose.x;
 		int d2 = (int) Map.experienceMap[data].mapPose.y;
@@ -1592,19 +1571,166 @@ void initaliseMap()
 //            //
 //----Tasks----//
 //            //
-task SLAM()
+task everything()
 {
+	if(changeTheta>0)
+  {
 	  pose3D(changeTheta, 0.5);
-    currentDirection += changeTheta;
-    setTemp();
-    checkLocalCell();
-    iterate(stepSize);
-    mapCorrection();
-    sumPoseStruct();
-    clearEncoders(); //clear encoder count
-    changeTheta=0;
-    mapCorrection();
+	}
+	else
+	{
+	  pose3D(changeTheta, 0);
+	}
+	currentDirection += changeTheta;
+	setTemp();
+	averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
+  setEncoderData(currentDirection);
+  checkLocalCell();
+	iterate(stepSize);
+  sumPoseStruct();
+  changeTheta=0;
+  iterateExperience(stepSize);
+  mapCorrection();
+  clearEncoders(); //clear encoder count
+ }
+
+//----Turns if need to----//
+void doTurn()
+{
+//part of the testing regime of the local cells
+	//decided that anticlockwise is positive
+	rightSonarValue = SensorValue(rightSonar); //obvious
+  leftSonarValue = SensorValue(leftSonar);
+
+  motor[motorB] = 0;
+  motor[motorC] = 0;
+
+	if(leftSonarValue > rightSonarValue)
+	{
+    nSyncedMotors = synchBC;
+  	nSyncedTurnRatio = -100;
+  	nMotorEncoderTarget[motorB] = 200;
+  	motor[motorB] = -desiredSpeed;
+    while(nMotorRunState[motorB] != runStateIdle)
+    {
+      if(nMotorEncoder[motorB]>=200)
+    	{
+    	  break;
+    	}
+    }
+    motor[motorB] = 0;
+    nSyncedMotors = synchNone;
+    changeTheta = 90;
+	}
+	else if(leftSonarValue < rightSonarValue)
+	{
+	  nSyncedMotors = synchBC;
+    nSyncedTurnRatio = -100;
+  	nMotorEncoderTarget[motorB] = 200;
+  	motor[motorB] = desiredSpeed;
+  	while(nMotorRunState[motorB] != runStateIdle)
+  	{
+  	  if(nMotorEncoder[motorB]>=200)
+      {
+    	  break;
+    	}
+    }
+  	motor[motorB] = 0;
+    nSyncedMotors = synchNone;
+	  changeTheta = -90;
+	 }
+	 else if(leftSonarValue < 19 && rightSonarValue < 19)
+	 {
+	  nSyncedMotors = synchBC;
+    nSyncedTurnRatio = -100;
+    nMotorEncoderTarget[motorB] = 400;
+    motor[motorB] = desiredSpeed;
+    while(nMotorRunState[motorB] != runStateIdle)
+    {
+    	if(nMotorEncoder[motorB]>=200)
+    	{
+    		break;
+    	}
+    }
+    motor[motorB] = 0;
+    nSyncedMotors = synchNone;
+	  changeTheta = 180;
+	 }
+	 else
+	 {
+	  nSyncedMotors = synchBC;
+  	nSyncedTurnRatio = -100;
+  	nMotorEncoderTarget[motorB] = 200;
+  	motor[motorB] = -desiredSpeed;
+    while(nMotorRunState[motorB] != runStateIdle)
+    {
+      if(nMotorEncoder[motorB]>=200)
+    	{
+    	 	break;
+    	}
+    }
+    motor[motorB] = 0;
+    nSyncedMotors = synchNone;
+    changeTheta = 90;
+	 }
+	 StartTask(everything);
 }
+
+//----Wall Follower----//
+void wallFollower()
+{
+	leftSonarValue = SensorValue[leftSonar];
+	if(leftSonarValue < 30)
+  {
+	  int distanceError = leftSonarValue-desiredLeft;
+    float angV = ((-kW*(distanceError))/(desiredSpeed)) - (beta0 + beta1*distanceError);
+	  if(angV > (desiredSpeed-5))
+	  {
+	    angV = desiredSpeed-5;
+	  }
+	  else if(angV <(-desiredSpeed+5))
+    {
+      angV = -desiredSpeed+5;
+    }
+    motor[motorB] = (int) desiredSpeed + angV;
+	  motor[motorC] = (int) desiredSpeed - angV;
+	  wait1Msec(50); //100
+	  motor[motorB] = (int) desiredSpeed - angV;
+	  motor[motorC] = (int) desiredSpeed + angV;
+	  wait1Msec(25); //50
+	  motor[motorB] = (int) desiredSpeed;
+	  motor[motorC] = (int) desiredSpeed;
+	}
+	else
+	{
+		motor[motorB] = 0;
+  	motor[motorC] = 0;
+  	nSyncedMotors = synchBC;
+  	nSyncedTurnRatio = 100;
+  	nMotorEncoderTarget[motorB] = 200;
+  	motor[motorB] = desiredSpeed;
+  	while(nMotorRunState[motorB] != runStateIdle) {};
+  	doTurn();
+  	nSyncedMotors = synchBC;
+  	nSyncedTurnRatio = 100;
+  	leftSonarValue = SensorValue[leftSonar];
+    while(leftSonarValue > 30)
+    {
+  	  motor[motorB] = desiredSpeed;
+  	  leftSonarValue = SensorValue[leftSonar];
+    }
+    motor[motorB] = 0;
+  	nSyncedMotors = synchNone;
+  	motor[motorB] = (int) desiredSpeed;
+	  motor[motorC] = (int) desiredSpeed;
+	}
+}
+
+task wall()
+{
+	wallFollower();
+}
+
 
 task main ()
 {
@@ -1615,52 +1741,52 @@ task main ()
 	wait10Msec(50);
 	setTemp();  //get local view
   checkLocalCell(); //create first association
-  grabData();
   startUp();
 	iterate(stepSize); //run excitation etc
+	//iterateExperience(stepSize);
 	mapCorrection();
-	wait10Msec(50);
 	currentDirection = 0; //set initial
   currentTheta = 0;
-
-  ////datalogging();
   sumPoseStruct();
-	while(nextID<numOfExperiences)
+	wait10Msec(50);
+  ClearTimer(T1);
+  ClearTimer(T2);
+  nSyncedMotors = synchNone;
+  motor[motorB] = desiredSpeed;
+  motor[motorC] = desiredSpeed;
+	while(nextID<=10)
 	{
+		//eraseDisplay();
+		//nxtDisplayBigTextLine(3, "%d", nextID);
 		alive(); //stop NXT from sleeping
+    centreSonarValue = SensorValue(centreSonar);
+    if(centreSonarValue < 19)
+  	{
+  		//nSchedulePriority = kHighPriority;
+      doTurn();
 
-    float centreSonarValue = SensorValue(centreSonar);
-    while(centreSonarValue<19)
-    {
-      if(centreSonarValue<19)
-	    {
-	  	  doTurn();
-	  	  pose3D(changeTheta,0);
-	    }
-	    else
-	    {
-	      drive(100,200,40);
-	      if(nPgmTime % 3.2)
-	      {
-          StartTask(SLAM);
-        }
-       }
-    }
-    currentDirection += changeTheta;
-    setTemp();
-    checkLocalCell();
-    iterate(stepSize);
-    mapCorrection();
-    sumPoseStruct();
-    //store data
-   // datalogging();
-    clearEncoders(); //clear encoder count
-    changeTheta=0;
+  		motor[motorB] = desiredSpeed;
+  	  motor[motorC] = desiredSpeed;
+  	  ClearTimer(T1);
+  	  ClearTimer(T2);
+  	 // nSchedulePriority = kDefaultTaskPriority;
+  	}
+  	else
+  	{
+      if(time100[T1] >= 5)
+  	  {
+  	    StartTask(wall);
+  		  ClearTimer(T1);
+  	  }
+  	  if(time100[T2] >= 35)
+  	  {
+  	    StartTask(everything);
+  	    ClearTimer(T2);
+  	  }
+  	}
   }
-  //datalogging2();
   mapCorrection();
-  datalogging2();
-  //datalogging3();
+  datalogging4();
   SaveNxtDatalog();
   PlaySound(soundException);
   while(bSoundActive){}
