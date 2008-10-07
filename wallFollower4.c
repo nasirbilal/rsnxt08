@@ -33,20 +33,6 @@ void doRightTurn()
     nSyncedMotors = synchNone;
 }
 
-void doRightTurn2()
-{
-    nSyncedMotors = synchBC;
-  	nSyncedTurnRatio = -100;
-  	leftSonarValue = SensorValue[centreSonar];
-  	while(abs(leftSonarValue - centreSonarValue) > 6)
-  	{
-  	  motor[motorB] = desiredSpeed;
-  	  leftSonarValue = SensorValue[leftSonar];
-  	}
-    nSyncedMotors = synchNone;
-}
-
-
 void wallFollower()
 {
 	leftSonarValue = SensorValue[leftSonar];
