@@ -85,7 +85,7 @@ int leftSonarValue = 0;
 int centreSonarValue = 0;
 
 //Wall Follower
-int desiredLeft = 13;
+int desiredLeft = 10;
 int desiredSpeed = 20;
 float kW = 60;
 float alpha = 0.5;
@@ -949,19 +949,16 @@ float dotMultiply()
 
 float dotMultiply2(localViewCell &cell1, localViewCell &cell2)
 {
-	int array1[numNeuralUnits], array2[numNeuralUnits];
-	memcpy(array1, cell1.localArray, 2*numNeuralUnits);
-	memcpy(array2, cell2.localArray, 2*numNeuralUnits);
-  float dotValue2 = 0;
+  float dotValue = 0;
   for(i = 0; i < numNeuralUnits; i++)
   {
-    if(array1[i]>0)
+    if(localTemp[i]>0)
     {
-      dotValue2 = dotValue2 + (array1[i] * array2[i]);
+      dotValue = dotValue + (localTemp[i] * localComparison[i]);
     }
   }
-  dotValue2 = (float) (dotValue2/10000);
-  return dotValue2; //return the multiply
+  dotValue = (float) (dotValue/10000);
+  return dotValue; //return the multiply
 }
 
 //----normalise the current view for processing----//
@@ -1043,9 +1040,9 @@ void checkLocalCell()
     else if(match == 1)
     {
     	injectEnergy(stepSize, poseAssoc[z].xCell, poseAssoc[z].yCell, poseAssoc[z].thetaCell);
-    	//nxtDisplayStringAt(64,30,"x: %2d",poseAssoc[z].xCell);
-	    //nxtDisplayStringAt(64,20,"y: %2d",poseAssoc[z].yCell);
-	   // nxtDisplayStringAt(64,10,"T: %1d",poseAssoc[z].thetaCell);
+    	nxtDisplayStringAt(64,30,"x: %2d",poseAssoc[z].xCell);
+	    nxtDisplayStringAt(64,20,"y: %2d",poseAssoc[z].yCell);
+	    nxtDisplayStringAt(64,10,"T: %1d",poseAssoc[z].thetaCell);
     	//nxtDisplayCenteredTextLine(6, "Energy Injected");
       PlaySound(soundBeepBeep);
       while(bSoundActive) {}
@@ -1278,7 +1275,7 @@ void setOutlinks(char linkID, experience startE, experience endE)
 	{
 		if(endE.inLinks[t] == -1)//an empty link
 	  {
-	  	endE.inLinks[t] = linkID-1;
+	  	endE.inLinks[t] = linkID;
 	  	break;
 	  }
 	}
@@ -1391,10 +1388,10 @@ void setLink(char startID, char endID)
 //----Compares arrays - this is due to RobotC unable to do this----//
 char compareArray(localViewCell &view1, localViewCell &view2)
 {
-	int array1[numNeuralUnits], array2[numNeuralUnits], nullArray[numNeuralUnits];
+	float array1[numNeuralUnits], array2[numNeuralUnits], nullArray[numNeuralUnits];
 	memset(nullArray, 0, 2*numNeuralUnits);
-	memcpy(array1, view1.localArray, 2*numNeuralUnits);
-	memcpy(array2, view2.localArray, 2*numNeuralUnits);
+	memcpy(array1, view1, 2*numNeuralUnits);
+	memcpy(array2, view2, 2*numNeuralUnits);
 
 	char check = 0;
 	for(i = 0; i<numNeuralUnits; i++)
@@ -1419,7 +1416,7 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 		*/
 		float tempMult = dotMultiply2(view1, view2);
 		float tempAngleExp = acos(tempMult);
-    if(tempAngleExp<0.26) //if difference less than 10 degrees between vectors
+    if(tempAngleExp<0.21) //if difference less than 10 degrees between vectors
     {
       return 1;
     }
@@ -1431,17 +1428,12 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 //----Compares two Experiences----//
 float compareTo(experience &experience1, experience &experience2)
 {
-	eraseDisplay();
   //first test
 	char firstTest = compareArray(experience1.localView,experience2.localView);
 	if(!firstTest)
 	{
-		nxtDisplayStringAt(64,30,"No");
-	    nxtDisplayStringAt(64,20,"No");
-	     nxtDisplayStringAt(64,10,"No");
 	  return 0;
 	}
-  nxtDisplayStringAt(64,30,"mat");
 
 	//2nd test
   PoseCellPosition thisPose;
@@ -1451,23 +1443,18 @@ float compareTo(experience &experience1, experience &experience2)
   char thetaAbsDist = abs(thisPose.theta - otherPose.theta);
   if(thetaAbsDist > maxAssociationRadiusTheta)
   {
-  	nxtDisplayStringAt(64,20,"No");
-	     nxtDisplayStringAt(64,10,"No");
     return 0;
-
   }
-  nxtDisplayStringAt(64,20,"mat");
 
   //3rd test
-  float maxXYDistSquared = 2;//maxAssociationRadiusXY * maxAssociationRadiusXY;
+  float maxXYDistSquared = maxAssociationRadiusXY * maxAssociationRadiusXY;
   int xyDistSquared = ((otherPose.x - thisPose.x) * (otherPose.x - thisPose.x)) +
                         ((otherPose.y - thisPose.y) * (otherPose.y - thisPose.y));
   if(xyDistSquared > maxXYDistSquared)
   {
-  	 nxtDisplayStringAt(64,10,"No");
     return 0;
   }
-  nxtDisplayStringAt(64,10,"mat");
+
   //otherwise is a measure of comparison from 0 to 1 comprised of a 0.5 contribution from theta and xy respectively
   return (2 - (sqrt(xyDistSquared) / maxAssociationRadiusXY) -
                   (thetaAbsDist / maxAssociationRadiusTheta)) * 0.5;
@@ -1480,12 +1467,10 @@ int matchExperience(experience &matchE)
   float maxScore = 0;
   int closestMatch = -1;
 	int q;
-  experience trial;
 
   for(q = 0; q<nextID; q++)
 	{
-		memcpy(trial, Map.experienceMap[q], 68);
-		float score = compareTo(matchE,trial);
+		float score = compareTo(matchE,Map.experienceMap[q]);
 		if(score > maxScore)
 		{
 		  	closestMatch = q;
@@ -1586,6 +1571,7 @@ void iterateMap(float stepSize)
   {
     if(closestExperience != nextID)
     {
+    	nxtDisplayCenteredBigTextLine(4, "Match: %d", closestExperience);
     	experience closeExperience;
     	memcpy(closestExperience,Map.experienceMap[closestExperience],68);
     	linkExperience(closeExperience);
@@ -1615,16 +1601,18 @@ void initaliseMap()
 task everything()
 {
 	nCurrState = stateRun;
+	eraseDisplay();
   pose3D(changeTheta, 0.5);
 	currentDirection += changeTheta;
   setEncoderData(currentDirection);
   checkLocalCell();
 	iterate(stepSize);
-  //sumPoseStruct();
+  sumPoseStruct();
   changeTheta=0;
   iterateExperience(stepSize);
   mapCorrection();
   nCurrState = stateStop;
+  nxtDisplayCenteredBigTextLine(2, "ID: %d", nextID);
 }
 
 task wall()
@@ -1637,7 +1625,6 @@ task wall()
 	{
 		averageEncoder = (int) ((nMotorEncoder[motorA] + nMotorEncoder[motorB])/2);
 		clearEncoders();
-		setEncoderData(currentDirection);
 		setTemp();
 		motor[motorB] = 0;
     motor[motorC] = 0;
@@ -1664,8 +1651,7 @@ task wall()
     	}
     	motor[motorB] = 0;
       nSyncedMotors = synchNone;
-      //changeTheta = 90;
-      changeTheta = getRotation();
+      changeTheta = 90;
 
 	  }
 		else if(leftSonarValue < rightSonarValue)
@@ -1680,8 +1666,7 @@ task wall()
     	}
     	 motor[motorB] = 0;
       nSyncedMotors = synchNone;
-	    //changeTheta = -90;
-      changeTheta = getRotation();
+	    changeTheta = -90;
 	  }
 		else if(leftSonarValue < 19 && rightSonarValue < 19)
 	  {
@@ -1695,8 +1680,7 @@ task wall()
     	}
     	 motor[motorB] = 0;
       nSyncedMotors = synchNone;
-	  	//changeTheta = 180;
-      changeTheta = getRotation();
+	  	changeTheta = 180;
 	   }
 	  else
 	  {
@@ -1710,36 +1694,36 @@ task wall()
     	}
     	motor[motorB] = 0;
       nSyncedMotors = synchNone;
-      //changeTheta = 90;
-      changeTheta = getRotation();
+      changeTheta = 90;
 	  }
-
 	}
 	else
 	{
-		if(leftSonarValue < 45)
+		if(leftSonarValue < 30)
 	  {
-		  int distanceError = leftSonarValue-desiredLeft;
-	    float angV = ((-kW*(distanceError))/(desiredSpeed)) - (beta0 + beta1*distanceError);
-		  if(angV > (desiredSpeed-5))
+		  if(leftSonarValue<desiredLeft)
 		  {
-		    angV = desiredSpeed-5;
+	      motor[motorB] = (int) desiredSpeed;
+		    motor[motorC] = (int) 0;
+		    wait10Msec(8);
+		    motor[motorB] = (int) 0;
+		    motor[motorC] = (int) desiredSpeed;
 		  }
-		  else if(angV <(-desiredSpeed+5))
-	    {
-	      angV = -desiredSpeed+5;
-	    }
-	    motor[motorB] = (int) desiredSpeed + angV;
-		  motor[motorC] = (int) desiredSpeed - angV;
-		  wait1Msec(50); //100
-		  motor[motorB] = (int) desiredSpeed - angV;
-		  motor[motorC] = (int) desiredSpeed + angV;
-		  wait1Msec(25); //50
-		  motor[motorB] = (int) desiredSpeed;
-		  motor[motorC] = (int) desiredSpeed;
+		  else if(leftSonarValue>desiredLeft)
+		  {
+		  	motor[motorB] = (int) 0;
+		    motor[motorC] = (int) desiredSpeed;
+		    wait10Msec(8);
+		    motor[motorB] = (int) desiredSpeed;
+		    motor[motorC] = (int) 0;
+		  }
+		  else
+		  {
+		    motor[motorB] = (int) desiredSpeed;
+		    motor[motorC] = (int) desiredSpeed;
+		  }
 		  averageEncoder = (int) (nMotorEncoder[motorA] + nMotorEncoder[motorB])/2;
 		  clearEncoders();
-	  	setEncoderData(currentDirection);
 		  setTemp();
 		}
 		else
@@ -1748,7 +1732,6 @@ task wall()
 	  	motor[motorC] = 0;
 	  	averageEncoder = (int) ((nMotorEncoder[motorA] + nMotorEncoder[motorB])/2)+200;
       clearEncoders();
-		  setEncoderData(currentDirection);
 	  	nSyncedMotors = synchBC;
 	  	nSyncedTurnRatio = 100;
 	  	nMotorEncoderTarget[motorB] = 200;
@@ -1773,8 +1756,7 @@ task wall()
     	{
     	 // if(nMotorEncoder[motorB] >= 200) {break;}
     	}
-     // changeTheta = 90;
-    	changeTheta = getRotation();
+      changeTheta = 90;
 	  	nSyncedTurnRatio = 100;
 	  	leftSonarValue = SensorValue[leftSonar];
 	    while(leftSonarValue > 30)
@@ -1792,7 +1774,6 @@ task wall()
   		//StopTask(wall);
 
   		StartTask(everything);
-  		//clearEncoders();
   	  ClearTimer(T2);
   	}
 	}
@@ -1805,7 +1786,7 @@ task main ()
 	nxtDisplayCenteredTextLine(5, "This is a test");
 	initialisePose(); //set up
 	initaliseMap();
-	wait10Msec(100);
+	wait10Msec(50);
 	setTemp();  //get local view
   checkLocalCell(); //create first association
   startUp();
@@ -1814,7 +1795,7 @@ task main ()
   currentTheta = 0;
   iterateExperience(stepSize);
 	mapCorrection();
-  //sumPoseStruct();
+  sumPoseStruct();
 	wait10Msec(50);
   ClearTimer(T1);
   ClearTimer(T2);
@@ -1833,7 +1814,6 @@ task main ()
   		ClearTimer(T1);
   	}
   }
-  iterateExperience(stepSize);
   //Problems
   /*
     MapPose isn't working right, have fixed checkLocalCell and changed the match angle to a smaller value

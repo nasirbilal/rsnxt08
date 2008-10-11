@@ -85,7 +85,7 @@ int leftSonarValue = 0;
 int centreSonarValue = 0;
 
 //Wall Follower
-int desiredLeft = 13;
+int desiredLeft = 10;
 int desiredSpeed = 20;
 float kW = 60;
 float alpha = 0.5;
@@ -947,23 +947,6 @@ float dotMultiply()
   return dotValue; //return the multiply
 }
 
-float dotMultiply2(localViewCell &cell1, localViewCell &cell2)
-{
-	int array1[numNeuralUnits], array2[numNeuralUnits];
-	memcpy(array1, cell1.localArray, 2*numNeuralUnits);
-	memcpy(array2, cell2.localArray, 2*numNeuralUnits);
-  float dotValue2 = 0;
-  for(i = 0; i < numNeuralUnits; i++)
-  {
-    if(array1[i]>0)
-    {
-      dotValue2 = dotValue2 + (array1[i] * array2[i]);
-    }
-  }
-  dotValue2 = (float) (dotValue2/10000);
-  return dotValue2; //return the multiply
-}
-
 //----normalise the current view for processing----//
 void normaliseTemp()
 {
@@ -1110,7 +1093,9 @@ void datalogging5()
     AddToDatalog(2,d2);
     AddToDatalog(3,d3);
   }
-  AddToDatalog(4,0);
+    AddToDatalog(4,0);
+    AddToDatalog(4,0);
+    AddToDatalog(4,0);
 }
 
 
@@ -1122,18 +1107,42 @@ void datalogging3()
 		int d1 = (int) Map.experienceMap[data].outLinks[0];
 		int d2 = (int) Map.experienceMap[data].outLinks[1];
 		int d3 = (int) Map.experienceMap[data].outLinks[2];
+		int d4 = (int) Map.experienceMap[data].outLinks[3];
+		int d5 = (int) Map.experienceMap[data].outLinks[4];
 
-		int d4 = (int) Map.experienceMap[data].inLinks[0];
-		int d5 = (int) Map.experienceMap[data].inLinks[1];
-	  int d6 = (int) Map.experienceMap[data].inLinks[2];
+		int d6 = (int) Map.experienceMap[data].inLinks[0];
+		int d7 = (int) Map.experienceMap[data].inLinks[1];
+	  int d8 = (int) Map.experienceMap[data].inLinks[2];
+    int d9 = (int) Map.experienceMap[data].inLinks[3];
+    int d10 = (int) Map.experienceMap[data].inLinks[4];
 
-	  AddToDatalog(8,d1);
-    AddToDatalog(8,d2);
-    AddToDatalog(8,d3);
-    AddToDatalog(9,d4);
-    AddToDatalog(9,d5);
-    AddToDatalog(9,d6);
+	  AddToDatalog(5,d1);
+    AddToDatalog(5,d2);
+    AddToDatalog(5,d3);
+    AddToDatalog(5,d4);
+    AddToDatalog(5,d5);
+    AddToDatalog(6,d6);
+    AddToDatalog(6,d7);
+    AddToDatalog(6,d8);
+    AddToDatalog(6,d9);
+    AddToDatalog(6,d10);
   }
+}
+
+void datalogging6()
+{
+	int data;
+	for(data = 0; data<numOfExperiences; data++)
+	{
+		int d1 = (int) links[data].startExperienceID;
+		int d2 = (int) links[data].endExperienceID;
+
+	  AddToDatalog(7,d1);
+    AddToDatalog(8,d2);
+  }
+    AddToDatalog(4,0);
+    AddToDatalog(4,0);
+    AddToDatalog(4,0);
 }
 
 void sumPoseStruct()
@@ -1245,16 +1254,20 @@ void setExperience(char id, vector3DE &odo, PoseCellPosition &pose, localViewCel
 void createNewExperience(experience &newE)
 {
   //going to assume everytime a createNewExperience is called it will affect the Map.currentExperience experience cell
-	memset(newE,0,68);
+	memset(newE,0,72);
 	//int temp[3] = {-1,-1,-1}; //My null symbol
 	newE.mapPose.x = -1; //null - not yet set up
 	newE.ID = nextID;
 	newE.outLinks[0] = -1;
 	newE.outLinks[1] = -1;
   newE.outLinks[2] = -1;
+  newE.outLinks[3] = -1;
+  newE.outLinks[4] = -1;
 	newE.inLinks[0] = -1;
 	newE.inLinks[1] = -1;
   newE.inLinks[2] = -1;
+  newE.inLinks[3] = -1;
+  newE.inLinks[4] = -1;
 	//memcpy(newE.outLinks,temp,6); //initalise to null
   //memcpy(newE.inLinks,temp,6);
 	memcpy(newE.odoPose,encoderData,12);
@@ -1263,6 +1276,7 @@ void createNewExperience(experience &newE)
 }
 
 //----Sets Outlinks and Inlinks----//
+//adds references to the link between experiences to the experiences involved (refer to experiencelink.java)
 void setOutlinks(char linkID, experience startE, experience endE)
 {
 	char t; //for loop
@@ -1278,7 +1292,7 @@ void setOutlinks(char linkID, experience startE, experience endE)
 	{
 		if(endE.inLinks[t] == -1)//an empty link
 	  {
-	  	endE.inLinks[t] = linkID-1;
+	  	endE.inLinks[t] = linkID;
 	  	break;
 	  }
 	}
@@ -1325,7 +1339,7 @@ void linkLastToCurrent()
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
       newMapPose.z = (lastMapPose.z + rotation);
       memcpy(Map.currentExperience.mapPose, newMapPose, 12); //set up mapPose for current Experience
-      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 68); //put currentExperience on the map
+      memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 72); //put currentExperience on the map
     }
     char y;
     int linkNumber;
@@ -1377,7 +1391,7 @@ void linkLastToCurrent()
 void linkExperience(experience &cExperience)
 {
   linkLastToCurrent();
-	memcpy(Map.currentExperience, cExperience, 68); //add experience
+	memcpy(Map.currentExperience, cExperience, 72); //add experience
   Map.currentExperienceStartTime = (int) (nPgmTime/1000); //in seconds
 }
 
@@ -1408,17 +1422,17 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 
 	if(check)
 	{
-		/*
-		for(i = 0; i<numNeuralUnits; i++)
-	  {
-		  if(array1[i] != array2[i])
-		  {
-		    return 0; // not a null vector
-		  }
-		}
-		*/
-		float tempMult = dotMultiply2(view1, view2);
-		float tempAngleExp = acos(tempMult);
+		float dotValue2 = 0;
+    for(i = 0; i < numNeuralUnits; i++)
+    {
+      if(array1[i]>0)
+      {
+        dotValue2 = dotValue2 + (array1[i] * array2[i]);
+      }
+    }
+    dotValue2 = (float) (dotValue2/10000);
+
+		float tempAngleExp = acos(dotValue2);
     if(tempAngleExp<0.26) //if difference less than 10 degrees between vectors
     {
       return 1;
@@ -1431,6 +1445,7 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 //----Compares two Experiences----//
 float compareTo(experience &experience1, experience &experience2)
 {
+	float result = 0;
 	eraseDisplay();
   //first test
 	char firstTest = compareArray(experience1.localView,experience2.localView);
@@ -1442,7 +1457,7 @@ float compareTo(experience &experience1, experience &experience2)
 	  return 0;
 	}
   nxtDisplayStringAt(64,30,"mat");
-
+  wait10Msec(50);
 	//2nd test
   PoseCellPosition thisPose;
 	PoseCellPosition otherPose;
@@ -1457,25 +1472,29 @@ float compareTo(experience &experience1, experience &experience2)
 
   }
   nxtDisplayStringAt(64,20,"mat");
-
+  wait10Msec(50);
   //3rd test
   float maxXYDistSquared = 2;//maxAssociationRadiusXY * maxAssociationRadiusXY;
   int xyDistSquared = ((otherPose.x - thisPose.x) * (otherPose.x - thisPose.x)) +
                         ((otherPose.y - thisPose.y) * (otherPose.y - thisPose.y));
+
   if(xyDistSquared > maxXYDistSquared)
   {
   	 nxtDisplayStringAt(64,10,"No");
     return 0;
   }
   nxtDisplayStringAt(64,10,"mat");
-  //otherwise is a measure of comparison from 0 to 1 comprised of a 0.5 contribution from theta and xy respectively
-  return (2 - (sqrt(xyDistSquared) / maxAssociationRadiusXY) -
+  wait10Msec(50);
+  result = (2 - (sqrt(xyDistSquared) / sqrt(2)) -
                   (thetaAbsDist / maxAssociationRadiusTheta)) * 0.5;
+                  wait10Msec(200);
+  //otherwise is a measure of comparison from 0 to 1 comprised of a 0.5 contribution from theta and xy respectively
+  return result;
 }
 
 //this compares the current experience to previous experiences returning the closest matching experience
 //returning the array id of the closest experience.
-int matchExperience(experience &matchE)
+char matchExperience(experience &matchE)
 {
   float maxScore = 0;
   int closestMatch = -1;
@@ -1484,7 +1503,7 @@ int matchExperience(experience &matchE)
 
   for(q = 0; q<nextID; q++)
 	{
-		memcpy(trial, Map.experienceMap[q], 68);
+		memcpy(trial, Map.experienceMap[q], 72);
 		float score = compareTo(matchE,trial);
 		if(score > maxScore)
 		{
@@ -1492,7 +1511,7 @@ int matchExperience(experience &matchE)
 		  	maxScore = score;
 		}
 	}
-	return closestMatch;
+	return (char) closestMatch;
 }
 
 //----Corrects the Experience Map----//
@@ -1511,7 +1530,7 @@ void mapCorrection()
 	char z; //for loop
 	for(z = 0; z <(nextID-1); z++)
 	{
-		memcpy(startExperience,Map.experienceMap[z],68); //copy experience being manipulated into startExperience
+		memcpy(startExperience,Map.experienceMap[z],72); //copy experience being manipulated into startExperience
 		memcpy(startPose, startExperience.mapPose, 12); //copy mapPose being manipulated into startPose
     char y; //for loop
     for(y = 0; y < numOfLinksPerExperience; y++)
@@ -1519,7 +1538,7 @@ void mapCorrection()
       if(startExperience.outLinks[y] != -1)
       {
         memcpy(link,links[startExperience.outLinks[y]],12);
-        memcpy(endExperience,Map.experienceMap[link.endExperienceID],68);
+        memcpy(endExperience,Map.experienceMap[link.endExperienceID],72);
         memcpy(endPose, endExperience.mapPose, 12);
 
         //expected position of the end experience
@@ -1550,10 +1569,10 @@ void mapCorrection()
         endPose.z = wrappedDegrees360(endPose.z + thetaAdjustment);
 
         memcpy(startExperience.mapPose, startPose, 12);
-        memcpy(Map.experienceMap[z], startExperience, 68);
+        memcpy(Map.experienceMap[z], startExperience, 72);
 
         memcpy(endExperience.mapPose, endPose, 12);
-        memcpy(Map.experienceMap[link.endExperienceID],endExperience,68);
+        memcpy(Map.experienceMap[link.endExperienceID],endExperience,72);
       }
       else {break;} //leave loop faster as there are no more links
     }
@@ -1568,10 +1587,10 @@ void startUp()
   startUpExperience.mapPose.x = 0;
   startUpExperience.mapPose.y = 0;
   startUpExperience.mapPose.z = 0;
-  memcpy(Map.currentExperience,startUpExperience,68);
+  memcpy(Map.currentExperience,startUpExperience,72);
   Map.currentExperienceStartTime = (int) (nPgmTime/1000);
   //this is my addition - i couldn't find in the java code where the first current view was create placed on the experience map
-  memcpy(Map.experienceMap[nextID],Map.currentExperience,68);
+  memcpy(Map.experienceMap[nextID],Map.currentExperience,72);
   Map.lastMatchedExperienceID = 0;
   nextID++;
 }
@@ -1580,14 +1599,14 @@ void iterateMap(float stepSize)
 {
   experience newExperience;
   createNewExperience(newExperience);
-  int closestExperience = matchExperience(newExperience);
+  char closestExperience = matchExperience(newExperience);
 
   if(closestExperience != -1)
   {
     if(closestExperience != nextID)
     {
     	experience closeExperience;
-    	memcpy(closestExperience,Map.experienceMap[closestExperience],68);
+    	memcpy(closeExperience,Map.experienceMap[closestExperience],72);
     	linkExperience(closeExperience);
     }
   }
@@ -1717,7 +1736,7 @@ task wall()
 	}
 	else
 	{
-		if(leftSonarValue < 45)
+		if(leftSonarValue < 30)
 	  {
 		  int distanceError = leftSonarValue-desiredLeft;
 	    float angV = ((-kW*(distanceError))/(desiredSpeed)) - (beta0 + beta1*distanceError);
@@ -1801,7 +1820,7 @@ task wall()
 
 task main ()
 {
-	nxtDisplayCenteredTextLine(3, "Roaming-10");
+	nxtDisplayCenteredTextLine(3, "Roaming-11");
 	nxtDisplayCenteredTextLine(5, "This is a test");
 	initialisePose(); //set up
 	initaliseMap();
@@ -1844,9 +1863,10 @@ task main ()
 
   */
   //
-  datalogging4();
-  datalogging5();
-  datalogging3();
+  datalogging4(); //mapPose
+  datalogging5(); //odoPose
+  datalogging3(); //outlinks/inlinks
+  datalogging6(); //links startExperienceID and endExperienceID
   SaveNxtDatalog();
   PlaySound(soundException);
   while(bSoundActive){}
