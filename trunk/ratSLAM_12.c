@@ -88,8 +88,8 @@ int centreSonarValue = 0;
 //Wall Follower
 int desiredLeft = 11;
 int desiredSpeed = 25;
-float kW = 40;
-float alpha = 0.5;
+float kW = 60;
+float alpha = 0.1;
 float beta1 = kW/(desiredSpeed);
 float beta0 = alpha * beta1;
 //                           //
@@ -1067,7 +1067,7 @@ void datalogging2()
 void datalogging4()
 {
 	int data;
-	for(data = 0; data<=20; data++)
+	for(data = 0; data<numOfExperiences; data++)
 	{
 		int d1 = (int) Map.experienceMap[data].mapPose.x;
 		int d2 = (int) Map.experienceMap[data].mapPose.y;
@@ -1084,7 +1084,7 @@ void datalogging4()
 void datalogging5()
 {
 	int data;
-	for(data = 0; data<=20; data++)
+	for(data = 0; data<numOfExperiences; data++)
 	{
 		int d1 = (int) Map.experienceMap[data].odoPose.x;
 		int d2 = (int) Map.experienceMap[data].odoPose.y;
@@ -1133,7 +1133,7 @@ void datalogging3()
 void datalogging6()
 {
 	int data;
-	for(data = 0; data<numOfExperiences; data++)
+	for(data = 0; data<numOfLinks; data++)
 	{
 		int d1 = (int) links[data].startExperienceID;
 		int d2 = (int) links[data].endExperienceID;
@@ -1305,7 +1305,10 @@ void setOutlinks(char linkID, experience startE, experience endE)
 // experience
 void linkLastToCurrent()
 {
-  float currentMeanTime = (Map.currentExperienceStartTime + (nPgmTime/1000)) / 2;
+  vector3DE lastMapPose;
+  vector3DE newMapPose;
+
+	float currentMeanTime = (Map.currentExperienceStartTime + (nPgmTime/1000)) / 2;
 
   if(Map.lastMatchedExperienceID != -1) //therefore not null
   {
@@ -1320,10 +1323,10 @@ void linkLastToCurrent()
 
     //angle to current (angle = atan(y/x))
     float angleToCurrent = getAngleDegrees((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
-    float translationAngle = lastOdoPose.z - angleToCurrent;
+    float translationAngle = wrappedDegrees360(lastOdoPose.z - angleToCurrent);
 
     //translation distance (in encoder clicks)
-    int translationDistance = getLength((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
+    float translationDistance = getLength((currentOdoPose.x - lastOdoPose.x),(currentOdoPose.y - lastOdoPose.y));
 
     //relative change in rotation
     float rotation = getRotationDegrees(lastOdoPose.z, currentOdoPose.z);
@@ -1331,14 +1334,13 @@ void linkLastToCurrent()
     //therefore has not been inserted onto experience map yet
     if(Map.currentExperience.mapPose.x == -1) //null statement
     {
-      vector3DE lastMapPose;
-      vector3DE newMapPose;
+
       memcpy(lastMapPose, Map.experienceMap[Map.lastMatchedExperienceID].mapPose, 12);
 
       float calcsAngle = lastMapPose.z + translationAngle;
       newMapPose.x = (lastMapPose.x + cosDegrees(calcsAngle) * translationDistance);
       newMapPose.y = (lastMapPose.y + sinDegrees(calcsAngle) * translationDistance);
-      newMapPose.z = (lastMapPose.z + rotation);
+      newMapPose.z = wrappedDegrees360(lastMapPose.z + rotation);
       memcpy(Map.currentExperience.mapPose, newMapPose, 12); //set up mapPose for current Experience
       memcpy(Map.experienceMap[Map.currentExperience.ID], Map.currentExperience, 72); //put currentExperience on the map
     }
@@ -1412,9 +1414,10 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 	memcpy(array2, view2.localArray, 2*numNeuralUnits);
 
 	char check = 0;
-	for(i = 0; i<numNeuralUnits; i++)
+	char qw;
+	for(qw = 0; qw<numNeuralUnits; qw++)
 	{
-		if(array1[i] != nullArray[i])
+		if(array1[qw] != nullArray[qw])
 		{
 		  check = 1; // not a null vector
 		  break;
@@ -1424,17 +1427,17 @@ char compareArray(localViewCell &view1, localViewCell &view2)
 	if(check)
 	{
 		float dotValue2 = 0;
-    for(i = 0; i < numNeuralUnits; i++)
+    for(qw = 0; qw < numNeuralUnits; qw++)
     {
-      if(array1[i]>0)
+      if(array1[qw]>0)
       {
-        dotValue2 = dotValue2 + (array1[i] * array2[i]);
+        dotValue2 = dotValue2 + (array1[qw] * array2[qw]);
       }
     }
     dotValue2 = (float) (dotValue2/10000);
 
 		float tempAngleExp = acos(dotValue2);
-    if(tempAngleExp<0.24) //if difference less than 10 degrees between vectors
+    if(tempAngleExp<0.25) //if difference less than 10 degrees between vectors
     {
       return 1;
     }
@@ -1637,7 +1640,7 @@ task everything()
   changeTheta = newChangeTheta;
   newChangeTheta = 0;
   iterateExperience(stepSize);
- // mapCorrection();
+  mapCorrection();
   nCurrState = stateStop;
 }
 
@@ -1694,7 +1697,7 @@ task wall()
     	 motor[motorB] = 0;
       nSyncedMotors = synchNone;
 	    newChangeTheta = -90;
-      //newChangeTheta = getRotation();
+     // newChangeTheta = getRotation();
 	  }
 		else if(leftSonarValue < 19 && rightSonarValue < 19)
 	  {
@@ -1708,7 +1711,7 @@ task wall()
     	}
     	 motor[motorB] = 0;
       nSyncedMotors = synchNone;
-	  	newChangeTheta = 180;
+	    newChangeTheta = 180;
       //newChangeTheta = getRotation();
 	   }
 	  else
@@ -1723,43 +1726,46 @@ task wall()
     	}
     	motor[motorB] = 0;
       nSyncedMotors = synchNone;
-      newChangeTheta = 90;
-      //newChangeTheta = getRotation();
+     newChangeTheta = 90;
+      //ewChangeTheta = getRotation();
 	  }
 	}
 	else
 	{
-		if(leftSonarValue < 40)
+		if(leftSonarValue < 30)
 	  {
+	  	nMotorPIDSpeedCtrl[motorB] = mtrSpeedReg;
+	  	nMotorPIDSpeedCtrl[motorC] = mtrSpeedReg;
 		  int distanceError = leftSonarValue-desiredLeft;
 	    int angV = (int) ((-kW*(distanceError))/(desiredSpeed)) - (beta0 + beta1*distanceError);
-	    if(angV > (desiredSpeed+5))
+	    if(angV > (desiredSpeed+15))
 		  {
-		    angV = desiredSpeed+5;
+		    angV = desiredSpeed+15;
 		  }
-		  else if(angV <-(desiredSpeed+5))
+		  else if(angV <-(desiredSpeed+15))
 	    {
-	      angV = -desiredSpeed-5;
+	      angV = -(desiredSpeed+15);
 	    }
 	    if(angV>0)
 	    {
 	      motor[motorB] = (int) (desiredSpeed + angV);
 		    motor[motorC] = (int) 0;
-		    wait1Msec(75); //100
+		    wait1Msec(50); //100
 		    motor[motorB] = (int) 0;
 		    motor[motorC] = (int) (desiredSpeed + angV);
-		    wait1Msec(75); //50
+		    wait1Msec(50); //50
 		    motor[motorB] = (int) desiredSpeed;
 		    motor[motorC] = (int) desiredSpeed;
 		  }
 		  else if(angV<0)
 	    {
+        angV = abs(angV);
 	      motor[motorB] = (int) 0;
-		    motor[motorC] = (int) (desiredSpeed - angV);
-		    wait1Msec(75); //100
-		    motor[motorB] = (int) (desiredSpeed - angV);
+		    motor[motorC] = (int) (desiredSpeed + angV);
+		    wait1Msec(50); //100
+		    motor[motorB] = (int) (desiredSpeed + angV);
 		    motor[motorC] = (int) 0;
-		    wait1Msec(75); //50
+		    wait1Msec(50); //50
 		    motor[motorB] = (int) desiredSpeed;
 		    motor[motorC] = (int) desiredSpeed;
 		  }
@@ -1832,7 +1838,7 @@ task wall()
 
 task main ()
 {
-	nxtDisplayCenteredTextLine(3, "Roaming-11");
+	nxtDisplayCenteredTextLine(3, "Roaming-12");
 	nxtDisplayCenteredTextLine(5, "This is a test");
 	initialisePose(); //set up
 	initaliseMap();
@@ -1847,6 +1853,7 @@ task main ()
 	mapCorrection();
   sumPoseStruct();
 	wait10Msec(50);
+	nMaxRegulatedSpeedNxt = 700;
   ClearTimer(T1);
   ClearTimer(T2);
   nSyncedMotors = synchNone;
@@ -1854,7 +1861,7 @@ task main ()
   motor[motorC] = desiredSpeed;
   nCurrState = stateStop;
   nWallState = stateStop;
-	while(nextID<=20)
+	while(nextID<numOfExperiences)
 	{
 		alive(); //stop NXT from sleeping
 
@@ -1862,6 +1869,11 @@ task main ()
   	{
   	  StartTask(wall);
   		ClearTimer(T1);
+  	}
+
+  	if(nextID > numOfExperiences || nextLink > numOfLinks)
+  	{
+      break;
   	}
   }
   iterateExperience(stepSize);
@@ -1875,7 +1887,7 @@ task main ()
   //
   datalogging4(); //mapPose
   datalogging5(); //odoPose
-  //datalogging3(); //outlinks/inlinks
+  datalogging3(); //outlinks/inlinks
   datalogging6(); //links startExperienceID and endExperienceID
   SaveNxtDatalog();
   PlaySound(soundException);

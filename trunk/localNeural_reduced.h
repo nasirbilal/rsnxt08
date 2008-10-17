@@ -14,7 +14,7 @@ int secondUnit = 80;
 int thirdUnit = 120;
 int fourthUnit = 160;
 int fifthUnit = 200;
-const char numLocalCells = 55; //number of possible views
+const char numLocalCells = 54; //number of possible views
 const char numNeuralUnits = 15; //number of neural units representing a view
 
 typedef struct

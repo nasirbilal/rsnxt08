@@ -10,8 +10,9 @@
 
 //----Variables and Definitions----//
 float maxAssociationRadiusXY = 0.35;
-char maxAssociationRadiusTheta = 3; //ratioed down due to only 6 degrees in theta
+char maxAssociationRadiusTheta = 2; //ratioed down due to only 6 degrees in theta
 const char numOfExperiences = 55; //main file
+const char numOfLinks = 70;
 const char numOfLinksPerExperience = 5; //assuming not many links between various experiences - this could be reduced
 
 //----Structs----//
@@ -70,7 +71,7 @@ typedef struct
 
 //----Functions----//
 experienceMapModule Map;
-experienceLink links[numOfExperiences];
+experienceLink links[numOfLinks];
 
 void grabData();
 void setExperience(char id, vector3D &odo, vector3D &pose, localViewCell &local);

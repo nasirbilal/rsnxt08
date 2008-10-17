@@ -21,7 +21,7 @@ float wrappedDegrees360 (float angle)
 }
 
 //Angle between two vectors
-int getAngleDegrees(int x, int y)
+float getAngleDegrees(float x, float y)
 {
   if(x == 0)
   {
@@ -34,7 +34,7 @@ int getAngleDegrees(int x, int y)
   	  return -(90);
   	}
   }
-	int theta = getDegrees(atan(y/x));
+	float theta = getDegrees(atan(y/x));
   if(x < 0)
   {
   	return (theta + 180);
